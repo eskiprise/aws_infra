@@ -1,13 +1,6 @@
-output "bot_api_token_arn" {
-  value       = aws_ssm_parameter.bot_api_token.arn
+output "parameters_arn" {
+  value       = { for p in aws_ssm_parameter.param : p.name => p.arn }
   sensitive   = false
-  description = "ARN of bot token"
-  depends_on  = [aws_ssm_parameter.bot_api_token]
-}
-
-output "openai_api_token_arn" {
-  value       = aws_ssm_parameter.openai_api_token.arn
-  sensitive   = false
-  description = "ARN of openai token"
-  depends_on  = [aws_ssm_parameter.openai_api_token]
+  description = "ARN SSM params"
+  depends_on  = [aws_ssm_parameter.param]
 }

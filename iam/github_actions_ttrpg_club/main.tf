@@ -33,7 +33,7 @@ resource "aws_iam_role" "github_actions_deploy" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:ref:refs/heads/main"
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*"
           }
         }
       }
@@ -56,7 +56,10 @@ resource "aws_iam_role_policy" "deploy_permissions" {
       {
         Sid      = "UpdateLambdaCode"
         Effect   = "Allow"
-        Action   = "lambda:UpdateFunctionCode"
+        Action   = [
+          "lambda:UpdateFunctionCode",
+          "lambda:GetFunctionConfiguration"
+        ]
         Resource = local.lambda_function_arn
       },
       {

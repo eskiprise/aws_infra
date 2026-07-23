@@ -1,0 +1,55 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource": "arn:aws:logs:${region}:${account_id}:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": [
+        "arn:aws:logs:${region}:${account_id}:log-group:/aws/lambda/${function_name}:*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+      ],
+      "Resource": [
+        "${users_table}",
+        "${signup_requests_table}",
+        "${signup_requests_table}/index/*",
+        "${game_systems_table}",
+        "${games_table}",
+        "${game_participants_table}",
+        "${game_poll_votes_table}",
+        "${game_comments_table}",
+        "${settings_table}"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "cognito-idp:AdminCreateUser"
+      ],
+      "Resource": "${user_pool_arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": "${avatars_bucket_arn}/*"
+    }
+  ]
+}

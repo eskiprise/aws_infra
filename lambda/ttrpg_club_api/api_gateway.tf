@@ -42,6 +42,7 @@ locals {
     "DELETE /admin/games/{gameId}",
     "POST /games/{gameId}/poll-vote",
     "GET /games/{gameId}/poll-results",
+    "GET /games/{gameId}/poll-voters",
     "GET /games/{gameId}/comments",
     "POST /games/{gameId}/comments",
     "DELETE /admin/games/{gameId}/comments/{commentId}",

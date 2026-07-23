@@ -1,6 +1,6 @@
 variable "github_repo" {
   type        = string
-  default     = "eskiprise/ttrpg_website"
+  default     = "eskiprise@193757156/ttrpg_website@1307463320"
   description = "GitHub \"org/repo\" allowed to assume the deploy role — only its main branch."
 }
 

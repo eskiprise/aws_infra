@@ -5,7 +5,7 @@ module "lambda_function" {
   function_name = var.function_name
   description   = "TTRPG club website API — signup, games, poll, comments, profiles, admin"
   handler       = "api.handler"
-  runtime       = "nodejs22.x"
+  runtime       = "nodejs24.x"
   timeout       = 15
   memory_size   = 256
 

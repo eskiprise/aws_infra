@@ -3,7 +3,9 @@ terraform {
 
   required_providers {
     aws = {
-      version = "~> 4.56.0"
+      # Newer than the rest of the repo (~> 4.56.0) specifically because nodejs20.x/22.x
+      # runtime support requires it — the other ttrpg_club_* modules don't need this.
+      version = "~> 6.0"
     }
     template = {
       version = "~> 2.2.0"

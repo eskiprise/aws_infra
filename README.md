@@ -7,23 +7,28 @@ This repository represents the infrastructure for my personal AWS cloud
   - users: table where telegram users are stored;
   - ttrpg_club_*: 8 tables for the TTRPG club website (users, signup_requests, game_systems,
     games, game_participants, game_poll_votes, game_comments, settings) — see
-    `../ttrpg_website` for the application code.
+    `../ttrpg_website2` for the application code.
 - Lambda. Contains 3 lambda functions. Every lambda is connected to my TG Bots.
   - bot_alert: Lambda which is triggered by cron and sends users compliments;
   - bot: Lambda that processes all incoming messages;
   - json_refiner: a bot that formats "Python Dict" to standard JSON format;
   - ttrpg_club_api: the TTRPG club website's API (Node.js/TS, one Lambda behind an HTTP API
-    that routes internally — see ttrpg_website/backend);
-  - ttrpg_club_notifier: posts new club signup requests to a dedicated Telegram bot,
-    triggered by ttrpg_club_signup_requests' DynamoDB Stream.
+    that routes internally — see ttrpg_website2/backend).
+  - New club signups are NOT notified via a dedicated bot/Lambda here — instead, a new
+    `notifySignup` function was added directly to the separate `ttrpg_poll_bot` repo
+    (Serverless Framework, not this repo), triggered by `ttrpg_club_signup_requests`'
+    DynamoDB Stream. It reuses that bot's existing token/session. See
+    `../ttrpg_poll_bot/serverless.yml` and `lambda_handler.py`.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
 - Cognito: `ttrpg_club` — User Pool for the club website (admin-provisioned members only,
   no public self-signup).
 - S3 / CloudFront: `ttrpg_club_frontend` (static site hosting) and `ttrpg_club_avatars`
   (member/GM profile pictures).
-- SSM: the generic `ssm` module (personal bot secrets) plus `ssm/ttrpg_club` (the club's
-  own Telegram bot token + admin chat ID, kept in a separate state so it can never
-  collide with the personal bot's parameters).
+- SSM: the generic `ssm` module (personal bot secrets). (An earlier `ssm/ttrpg_club`
+  module briefly existed for a dedicated club bot token/chat-id — since superseded by
+  reusing `ttrpg_poll_bot` instead, those files were removed. The two placeholder
+  parameters it created may still exist in SSM, unused — safe to ignore or delete
+  manually via `aws ssm delete-parameter`.)
 - Security Groups
 - VPC
 
@@ -40,23 +45,19 @@ For the TTRPG club website specifically, apply in this order (each is an indepen
 root module/state, so order matters where one references another's remote state):
 1. `dynamodb/ttrpg_club_*` (all 8, any order)
 2. `cognito/ttrpg_club`
-3. `ssm/ttrpg_club` — then manually set the real parameter values (see below)
-4. `s3/ttrpg_club_avatars`
-5. `s3_cloudfront/ttrpg_club_frontend`
-6. `npm run build --workspace backend` in `ttrpg_website` (bundles the Lambda code the
-   next two modules reference)
-7. `lambda/ttrpg_club_api` and `lambda/ttrpg_club_notifier`
+3. `s3/ttrpg_club_avatars`
+4. `s3_cloudfront/ttrpg_club_frontend`
+5. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code
+   `lambda/ttrpg_club_api` references)
+6. `lambda/ttrpg_club_api`
+7. In `../ttrpg_poll_bot`: get the signup-requests stream ARN with
+   `terraform output -raw dynamodb_table_stream_arn` (run from
+   `dynamodb/ttrpg_club_signup_requests`), then
+   `serverless deploy --param="adminChatId=<your chat id>" --param="signupRequestsStreamArn=<that ARN>"`
 
-After step 3 applies, the two SSM parameters exist as placeholders (`"replace_me!"`) —
-set their real values once you've created the club's Telegram bot via @BotFather:
+After step 4, sync the frontend build and invalidate the CDN cache:
 ```
-aws ssm put-parameter --name /ttrpg-club/telegram-bot-token --value "<bot token>" --type SecureString --overwrite
-aws ssm put-parameter --name /ttrpg-club/telegram-admin-chat-id --value "<chat id>" --type SecureString --overwrite
-```
-
-After step 7, sync the frontend build and invalidate the CDN cache:
-```
-npm run build --workspace frontend   # in ttrpg_website, with .env pointed at the outputs below
+npm run build --workspace frontend   # in ttrpg_website2, with .env pointed at the outputs below
 aws s3 sync frontend/dist s3://ttrpg-club-frontend --delete
 aws cloudfront create-invalidation --distribution-id <s3_cloudfront/ttrpg_club_frontend output> --paths "/*"
 ```

@@ -24,7 +24,7 @@ resource "aws_apigatewayv2_integration" "lambda" {
 }
 
 locals {
-  # Must match the `routes` keys in ttrpg_website/backend/src/handlers/api.ts exactly —
+  # Must match the `routes` keys in ttrpg_website2/backend/src/handlers/api.ts exactly —
   # API Gateway's route_key IS what the Lambda sees as event.routeKey.
   route_keys = toset([
     "GET /health",
@@ -45,6 +45,7 @@ locals {
     "GET /games/{gameId}/comments",
     "POST /games/{gameId}/comments",
     "DELETE /admin/games/{gameId}/comments/{commentId}",
+    "GET /members",
     "GET /me",
     "GET /me/stats",
     "PATCH /me/profile",

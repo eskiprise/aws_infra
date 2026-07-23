@@ -1,11 +1,11 @@
 module "lambda_function" {
   source  = "terraform-aws-modules/lambda/aws"
-  version = "~> 4.9.0"
+  version = "~> 8.0"
 
   function_name = var.function_name
   description   = "TTRPG club website API — signup, games, poll, comments, profiles, admin"
   handler       = "api.handler"
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs22.x"
   timeout       = 15
   memory_size   = 256
 
@@ -15,10 +15,10 @@ module "lambda_function" {
   lambda_role = aws_iam_role.lambda_role.arn
 
   # Built by `npm run build --workspace backend` (esbuild), which bundles everything
-  # except @aws-sdk/* (already present in the Node.js 20.x Lambda runtime).
+  # except @aws-sdk/* (already present in the Node.js 22.x Lambda runtime).
   source_path = [
     {
-      path             = "../../../ttrpg_website/backend/dist/api.js"
+      path             = "../../../ttrpg_website2/backend/dist/api.js"
       pip_requirements = false
     }
   ]

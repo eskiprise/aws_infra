@@ -71,6 +71,16 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.ttrpg_club.id
   name        = "$default"
   auto_deploy = true
+
+  # Applies to every route that doesn't set its own route_settings override below —
+  # rejects excess requests with 429 before they ever reach the Lambda, so a request
+  # flood can't run up Lambda/DynamoDB costs. Account-wide, not per-IP (HTTP API has
+  # no built-in per-IP throttling; that needs AWS WAF, which costs extra — worth
+  # adding later if a single abusive IP becomes a real problem).
+  default_route_settings {
+    throttling_rate_limit  = var.throttling_rate_limit
+    throttling_burst_limit = var.throttling_burst_limit
+  }
 }
 
 resource "aws_lambda_permission" "apigw" {

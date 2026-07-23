@@ -9,6 +9,10 @@ module "lambda_function" {
   timeout       = 15
   memory_size   = 256
 
+  # Hard cost ceiling: no matter how much traffic hits the API, at most this many
+  # invocations run at once. Paired with the API Gateway throttle below.
+  reserved_concurrent_executions = var.reserved_concurrency
+
   attach_cloudwatch_logs_policy = true
 
   create_role = false

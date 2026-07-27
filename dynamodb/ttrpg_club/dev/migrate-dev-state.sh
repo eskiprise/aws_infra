@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# One-time migration: moves the 11 existing ttrpg_club DynamoDB tables (+ 2
-# aws_ssm_parameter resources) out of their old, separate per-table Terraform states
-# and into this consolidated dynamodb/ttrpg_club/dev state — WITHOUT destroying or
-# recreating anything real. This only ever READS the old remote states (via
-# `terraform state pull`); it never modifies or deletes them, so nothing is lost even
-# if this is interrupted partway — just re-run it.
+# One-time migration: moves the 11 existing ttrpg_club DynamoDB tables out of their
+# old, separate per-table Terraform states and into this consolidated
+# dynamodb/ttrpg_club/dev state — WITHOUT destroying or recreating anything real.
+# This only ever READS the old remote states (via `terraform state pull`); it never
+# modifies or deletes them, so nothing is lost even if this is interrupted partway.
+#
+# Note: the two `aws_ssm_parameter` resources (signup_requests_stream_arn,
+# telegram_feedback_stream_arn) are NOT migrated here — they were never actually
+# `terraform apply`'d in the old per-table directories, so there's nothing to move.
+# They get created fresh by the first real `terraform apply` in this directory, which
+# is the correct, safe action for a resource that doesn't exist yet.
 #
 # Prerequisites:
 #   1. Run `terraform init` in THIS directory first, so the new (empty) destination
@@ -15,14 +20,21 @@ set -euo pipefail
 #   3. All 11 old aws_infra/dynamodb/ttrpg_club_* directories must still exist
 #      untouched — don't delete them until AFTER the safety check below passes.
 #
-# After this script finishes: run `terraform plan` in this directory. It MUST print
-# "No changes. Your infrastructure matches the configuration." — that's the proof
-# nothing will be destroyed or recreated. If it shows anything else, STOP and
-# investigate before running `terraform apply` anywhere.
+# After this script finishes: run `terraform plan` in this directory. It should show
+# only the 2 SSM parameters as "to add" (0 to change/destroy on the 11 tables) — that's
+# the proof the migration worked and nothing will be destroyed or recreated. If it
+# proposes touching any table, STOP and investigate before running `terraform apply`.
+#
+# Safety net: a trap below pushes whatever has been accumulated so far no matter how
+# the script exits, and always prints the working file's path — so even if some future
+# run fails partway, the already-migrated resources aren't silently lost the way they
+# were the first time this ran (see the fix for that in git history).
 
 WORKDIR=$(mktemp -d)
 NEW_STATE="$WORKDIR/dev.tfstate"
 echo "Working files: $WORKDIR"
+
+trap 'echo; echo "Pushing whatever was accumulated in $NEW_STATE ..."; terraform state push "$NEW_STATE" && echo "Pushed." || echo "Push failed — recover manually with: terraform state push $NEW_STATE"' EXIT
 
 terraform state pull > "$NEW_STATE"
 
@@ -39,7 +51,6 @@ move() {
 
 move ttrpg_club_users                 module.dynamodb_table module.users
 move ttrpg_club_signup_requests       module.dynamodb_table module.signup_requests
-move ttrpg_club_signup_requests       aws_ssm_parameter.stream_arn aws_ssm_parameter.signup_requests_stream_arn
 move ttrpg_club_game_systems          module.dynamodb_table module.game_systems
 move ttrpg_club_games                 module.dynamodb_table module.games
 move ttrpg_club_game_participants     module.dynamodb_table module.game_participants
@@ -49,10 +60,6 @@ move ttrpg_club_settings              module.dynamodb_table module.settings
 move ttrpg_club_telegram_rating_polls module.dynamodb_table module.telegram_rating_polls
 move ttrpg_club_telegram_rating_votes module.dynamodb_table module.telegram_rating_votes
 move ttrpg_club_telegram_feedback     module.dynamodb_table module.telegram_feedback
-move ttrpg_club_telegram_feedback     aws_ssm_parameter.stream_arn aws_ssm_parameter.telegram_feedback_stream_arn
-
-terraform state push "$NEW_STATE"
 
 echo
-echo "Migration complete. Now run: terraform plan"
-echo "It MUST say \"No changes.\" before you do anything else (including deleting the old directories)."
+echo "All moves done — the EXIT trap above will push the result now."

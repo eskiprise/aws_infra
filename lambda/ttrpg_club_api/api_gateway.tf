@@ -47,6 +47,8 @@ locals {
     "POST /games/{gameId}/comments",
     "DELETE /admin/games/{gameId}/comments/{commentId}",
     "GET /members",
+    "GET /statistics",
+    "POST /telegram/stats",
     "GET /me",
     "GET /me/stats",
     "PATCH /me/profile",

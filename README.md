@@ -8,6 +8,11 @@ This repository represents the infrastructure for my personal AWS cloud
   - ttrpg_club_*: 8 tables for the TTRPG club website (users, signup_requests, game_systems,
     games, game_participants, game_poll_votes, game_comments, settings) — see
     `../ttrpg_website2` for the application code.
+  - ttrpg_club_telegram_rating_polls / ttrpg_club_telegram_rating_votes: 2 tables backing the
+    Telegram Mini App's personal stats feature — capture `/rate` poll answers straight from
+    the club's Telegram chat, keyed purely by Telegram user ID (voters need not be registered
+    club members). Read by `lambda/ttrpg_club_api`'s `POST /telegram/stats` endpoint, written
+    by `../ttrpg_poll_bot`'s webhook. See `../ttrpg_poll_bot/README_LAMBDA.md`.
 - Lambda. Contains 3 lambda functions. Every lambda is connected to my TG Bots.
   - bot_alert: Lambda which is triggered by cron and sends users compliments;
   - bot: Lambda that processes all incoming messages;
@@ -50,10 +55,14 @@ root module/state, so order matters where one references another's remote state)
 5. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code
    `lambda/ttrpg_club_api` references)
 6. `lambda/ttrpg_club_api`
-7. In `../ttrpg_poll_bot`: get the signup-requests stream ARN with
+7. `dynamodb/ttrpg_club_telegram_rating_polls` and `dynamodb/ttrpg_club_telegram_rating_votes`
+   (any order, independent of the 8 tables above)
+8. In `../ttrpg_poll_bot`: get the signup-requests stream ARN with
    `terraform output -raw dynamodb_table_stream_arn` (run from
    `dynamodb/ttrpg_club_signup_requests`), then
    `serverless deploy --param="adminChatId=<your chat id>" --param="signupRequestsStreamArn=<that ARN>"`
+   — add `--param="miniAppDeepLink=<t.me deep link>"` once you've registered the Mini App
+   with @BotFather (see `../ttrpg_poll_bot/README_LAMBDA.md`'s Personal Stats section).
 
 After step 4, sync the frontend build and invalidate the CDN cache:
 ```

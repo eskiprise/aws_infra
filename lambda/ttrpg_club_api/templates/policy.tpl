@@ -34,7 +34,9 @@
         "${game_participants_table}",
         "${game_poll_votes_table}",
         "${game_comments_table}",
-        "${settings_table}"
+        "${settings_table}",
+        "${telegram_rating_votes_table}",
+        "${telegram_rating_votes_table}/index/*"
       ]
     },
     {
@@ -50,6 +52,11 @@
         "s3:PutObject"
       ],
       "Resource": "${avatars_bucket_arn}/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:GetParameter",
+      "Resource": "${telegram_bot_token_param_arn}"
     }
   ]
 }

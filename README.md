@@ -5,14 +5,29 @@ This repository represents the infrastructure for my personal AWS cloud
 - DynamoDB Tables
   - compliments: table for the compliments for my Telegram Bot;
   - users: table where telegram users are stored;
-  - ttrpg_club_*: 8 tables for the TTRPG club website (users, signup_requests, game_systems,
-    games, game_participants, game_poll_votes, game_comments, settings) — see
-    `../ttrpg_website2` for the application code.
-  - ttrpg_club_telegram_rating_polls / ttrpg_club_telegram_rating_votes: 2 tables backing the
-    Telegram Mini App's personal stats feature — capture `/rate` poll answers straight from
-    the club's Telegram chat, keyed purely by Telegram user ID (voters need not be registered
-    club members). Read by `lambda/ttrpg_club_api`'s `POST /telegram/stats` endpoint, written
-    by `../ttrpg_poll_bot`'s webhook. See `../ttrpg_poll_bot/README_LAMBDA.md`.
+  - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 11 ttrpg_club tables,
+    one environment per folder, each folder a single Terraform state** — no more visiting
+    a separate directory per table. `dev` is the live environment (real member data);
+    `prod` is a brand-new, empty environment provisioned ahead of when a separate prod
+    website/API gets built (nothing points at it yet). The 11 tables in each: `users`,
+    `signup_requests`, `game_systems`, `games`, `game_participants`, `game_poll_votes`,
+    `game_comments`, `settings` (the original 8, see `../ttrpg_website2` for the
+    application code), plus `telegram_rating_polls` / `telegram_rating_votes` (the
+    Telegram Mini App's personal-stats feature — capture `/rate` poll answers straight
+    from the club's Telegram chat, keyed purely by Telegram user ID; the polls table
+    remembers each poll's creator/GM via a `creatorUserId-index` GSI) and
+    `telegram_feedback` (detailed, mostly-anonymous session feedback submitted via the
+    Mini App's feedback form; its DynamoDB Stream triggers a notifier in
+    `../ttrpg_poll_bot` that DMs the GM). Prod table names are prefixed
+    `ttrpg_club_prod_*`; dev keeps the original unprefixed names. Both publish their
+    signup-requests/feedback stream ARNs to SSM (`/ttrpg_club/...` for dev,
+    `/ttrpg_club/prod/...` for prod) for `../ttrpg_poll_bot` to read.
+  - **Migrating from the old per-table layout**: if you still have the 11 old
+    `dynamodb/ttrpg_club_<table>/` directories, they're superseded by
+    `dynamodb/ttrpg_club/dev/` above — see that folder's `migrate-dev-state.sh`, which
+    moves each table's existing Terraform state into the consolidated one via
+    `terraform state mv` (never destroys/recreates anything). Only delete the old
+    directories after `terraform plan` in the new one shows "No changes."
 - Lambda. Contains 3 lambda functions. Every lambda is connected to my TG Bots.
   - bot_alert: Lambda which is triggered by cron and sends users compliments;
   - bot: Lambda that processes all incoming messages;
@@ -47,22 +62,26 @@ To apply all of the resources you need to apply them in particular order:
 6. Lambda
 
 For the TTRPG club website specifically, apply in this order (each is an independent
-root module/state, so order matters where one references another's remote state):
-1. `dynamodb/ttrpg_club_*` (all 8, any order)
+root module/state, so order matters where one references another's remote state —
+notably, `dynamodb/ttrpg_club/dev` must be applied *before* `lambda/ttrpg_club_api`,
+which reads all 11 table outputs from it):
+1. `dynamodb/ttrpg_club/dev` (all 11 tables, one `terraform apply`)
 2. `cognito/ttrpg_club`
 3. `s3/ttrpg_club_avatars`
 4. `s3_cloudfront/ttrpg_club_frontend`
 5. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code
    `lambda/ttrpg_club_api` references)
 6. `lambda/ttrpg_club_api`
-7. `dynamodb/ttrpg_club_telegram_rating_polls` and `dynamodb/ttrpg_club_telegram_rating_votes`
-   (any order, independent of the 8 tables above)
-8. In `../ttrpg_poll_bot`: get the signup-requests stream ARN with
-   `terraform output -raw dynamodb_table_stream_arn` (run from
-   `dynamodb/ttrpg_club_signup_requests`), then
-   `serverless deploy --param="adminChatId=<your chat id>" --param="signupRequestsStreamArn=<that ARN>"`
-   — add `--param="miniAppDeepLink=<t.me deep link>"` once you've registered the Mini App
-   with @BotFather (see `../ttrpg_poll_bot/README_LAMBDA.md`'s Personal Stats section).
+7. In `../ttrpg_poll_bot`: `serverless deploy --param="adminChatId=<your chat id>"`. The
+   signup-requests and feedback stream ARNs need no `--param` — step 1 above publishes
+   both stream ARNs to SSM (`/ttrpg_club/signup_requests_stream_arn`,
+   `/ttrpg_club/telegram_feedback_stream_arn`) that `ttrpg_poll_bot`'s `serverless.yml`
+   reads directly via `${ssm:...}`. Add `--param="miniAppDeepLink=<t.me deep link>"`
+   once you've registered the Mini App with @BotFather (see
+   `../ttrpg_poll_bot/README_LAMBDA.md`'s Personal Stats and Session Feedback sections).
+
+`dynamodb/ttrpg_club/prod` can be applied independently at any time (steps above are
+dev-only) — it's a self-contained, empty environment nothing else references yet.
 
 After step 4, sync the frontend build and invalidate the CDN cache:
 ```

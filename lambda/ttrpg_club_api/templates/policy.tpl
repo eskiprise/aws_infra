@@ -36,7 +36,10 @@
         "${game_comments_table}",
         "${settings_table}",
         "${telegram_rating_votes_table}",
-        "${telegram_rating_votes_table}/index/*"
+        "${telegram_rating_votes_table}/index/*",
+        "${telegram_rating_polls_table}",
+        "${telegram_rating_polls_table}/index/*",
+        "${telegram_feedback_table}"
       ]
     },
     {

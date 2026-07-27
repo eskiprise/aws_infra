@@ -28,20 +28,22 @@ module "lambda_function" {
   ]
 
   environment_variables = {
-    TABLE_USERS             = data.terraform_remote_state.users_dynamodb.outputs.dynamodb_table_name
-    TABLE_SIGNUP_REQUESTS   = data.terraform_remote_state.signup_requests_dynamodb.outputs.dynamodb_table_name
-    TABLE_GAME_SYSTEMS      = data.terraform_remote_state.game_systems_dynamodb.outputs.dynamodb_table_name
-    TABLE_GAMES             = data.terraform_remote_state.games_dynamodb.outputs.dynamodb_table_name
-    TABLE_GAME_PARTICIPANTS = data.terraform_remote_state.game_participants_dynamodb.outputs.dynamodb_table_name
-    TABLE_GAME_POLL_VOTES   = data.terraform_remote_state.game_poll_votes_dynamodb.outputs.dynamodb_table_name
-    TABLE_GAME_COMMENTS     = data.terraform_remote_state.game_comments_dynamodb.outputs.dynamodb_table_name
-    TABLE_SETTINGS          = data.terraform_remote_state.settings_dynamodb.outputs.dynamodb_table_name
+    TABLE_USERS             = data.terraform_remote_state.dynamodb.outputs.users_table_name
+    TABLE_SIGNUP_REQUESTS   = data.terraform_remote_state.dynamodb.outputs.signup_requests_table_name
+    TABLE_GAME_SYSTEMS      = data.terraform_remote_state.dynamodb.outputs.game_systems_table_name
+    TABLE_GAMES             = data.terraform_remote_state.dynamodb.outputs.games_table_name
+    TABLE_GAME_PARTICIPANTS = data.terraform_remote_state.dynamodb.outputs.game_participants_table_name
+    TABLE_GAME_POLL_VOTES   = data.terraform_remote_state.dynamodb.outputs.game_poll_votes_table_name
+    TABLE_GAME_COMMENTS     = data.terraform_remote_state.dynamodb.outputs.game_comments_table_name
+    TABLE_SETTINGS          = data.terraform_remote_state.dynamodb.outputs.settings_table_name
     COGNITO_USER_POOL_ID    = data.terraform_remote_state.cognito.outputs.user_pool_id
     COGNITO_CLIENT_ID       = data.terraform_remote_state.cognito.outputs.web_client_id
     AVATAR_BUCKET           = data.terraform_remote_state.avatars_s3.outputs.bucket_name
     ALLOWED_ORIGIN          = var.cors_allowed_origin
 
-    TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.telegram_rating_votes_dynamodb.outputs.dynamodb_table_name
+    TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_name
+    TABLE_TELEGRAM_RATING_POLLS = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_name
+    TABLE_TELEGRAM_FEEDBACK     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_name
     TELEGRAM_BOT_TOKEN_PARAM    = "/telegram/poll_bot/token"
   }
 }

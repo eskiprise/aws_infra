@@ -34,11 +34,16 @@ This repository represents the infrastructure for my personal AWS cloud
   - json_refiner: a bot that formats "Python Dict" to standard JSON format;
   - ttrpg_club_api: the TTRPG club website's API (Node.js/TS, one Lambda behind an HTTP API
     that routes internally — see ttrpg_website2/backend).
-  - New club signups are NOT notified via a dedicated bot/Lambda here — instead, a new
-    `notifySignup` function was added directly to the separate `ttrpg_poll_bot` repo
-    (Serverless Framework, not this repo), triggered by `ttrpg_club_signup_requests`'
-    DynamoDB Stream. It reuses that bot's existing token/session. See
-    `../ttrpg_poll_bot/serverless.yml` and `lambda_handler.py`.
+  - ttrpg_poll_bot: the club's Telegram bot (Python), 3 functions — `webhook` (behind its
+    own HTTP API, receives Telegram updates), `notifySignup` and `notifyFeedback` (each
+    triggered directly by a DynamoDB Stream from two of the `dynamodb/ttrpg_club/dev`
+    tables above). Previously deployed via Serverless Framework/CloudFormation; migrated
+    to this Terraform module so it works the same way as `ttrpg_club_api` — Terraform
+    owns the infra, code ships separately via `aws lambda update-function-code` (see
+    `../ttrpg_poll_bot/build.sh` and its GitHub Actions workflow). If migrating an
+    existing Serverless deployment rather than starting fresh, see this module's
+    `import-from-serverless.sh` — it imports the live resources with zero downtime
+    instead of recreating them.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
 - Cognito: `ttrpg_club` — User Pool for the club website (admin-provisioned members only,
   no public self-signup).

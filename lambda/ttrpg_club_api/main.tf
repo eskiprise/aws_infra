@@ -40,6 +40,9 @@ module "lambda_function" {
     COGNITO_CLIENT_ID       = data.terraform_remote_state.cognito.outputs.web_client_id
     AVATAR_BUCKET           = data.terraform_remote_state.avatars_s3.outputs.bucket_name
     ALLOWED_ORIGIN          = var.cors_allowed_origin
+
+    TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.telegram_rating_votes_dynamodb.outputs.dynamodb_table_name
+    TELEGRAM_BOT_TOKEN_PARAM    = "/telegram/poll_bot/token"
   }
 }
 

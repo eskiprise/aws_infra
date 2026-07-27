@@ -90,6 +90,15 @@ data "terraform_remote_state" "avatars_s3" {
   }
 }
 
+data "terraform_remote_state" "telegram_rating_votes_dynamodb" {
+  backend = "s3"
+  config = {
+    bucket = "compliment-bot-terraform-state"
+    key    = "dynamodb/ttrpg_club_telegram_rating_votes/terraform.tfstate"
+    region = "eu-west-2"
+  }
+}
+
 data "template_file" "assume_role" {
   template = file("${path.module}/templates/assume_role.tpl")
 }
@@ -110,5 +119,10 @@ data "template_file" "policy" {
     settings_table          = data.terraform_remote_state.settings_dynamodb.outputs.dynamodb_table_arn
     user_pool_arn           = data.terraform_remote_state.cognito.outputs.user_pool_arn
     avatars_bucket_arn      = data.terraform_remote_state.avatars_s3.outputs.bucket_arn
+
+    telegram_rating_votes_table = data.terraform_remote_state.telegram_rating_votes_dynamodb.outputs.dynamodb_table_arn
+    # Not managed by any Terraform state (created ad hoc alongside ttrpg_poll_bot) —
+    # constructed directly rather than via a remote state lookup.
+    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/telegram/poll_bot/token"
   }
 }

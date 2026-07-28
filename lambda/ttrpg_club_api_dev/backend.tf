@@ -14,7 +14,7 @@ terraform {
 
   backend "s3" {
     bucket         = "compliment-bot-terraform-state"
-    key            = "lambda/ttrpg_club_api/terraform.tfstate"
+    key            = "lambda/ttrpg_club_api_dev/terraform.tfstate"
     region         = "eu-west-2"
     dynamodb_table = "terraform-lock"
   }

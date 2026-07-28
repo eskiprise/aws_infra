@@ -3,7 +3,7 @@ module "lambda_function" {
   version = "~> 8.0"
 
   function_name = var.function_name
-  description   = "TTRPG club website API — signup, games, poll, comments, profiles, admin"
+  description   = "TTRPG club website API (dev) — signup, games, poll, comments, profiles, admin"
   handler       = "api.handler"
   runtime       = "nodejs24.x"
   timeout       = 15
@@ -44,7 +44,7 @@ module "lambda_function" {
     TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_name
     TABLE_TELEGRAM_RATING_POLLS = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_name
     TABLE_TELEGRAM_FEEDBACK     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_name
-    TELEGRAM_BOT_TOKEN_PARAM    = "/telegram/poll_bot/token"
+    TELEGRAM_BOT_TOKEN_PARAM    = "/ttrpg_club/dev/poll_bot/token"
   }
 }
 

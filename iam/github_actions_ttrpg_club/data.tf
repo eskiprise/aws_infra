@@ -4,7 +4,7 @@ data "terraform_remote_state" "lambda_api_dev" {
   backend = "s3"
   config = {
     bucket = "compliment-bot-terraform-state"
-    key    = "lambda/ttrpg_club_api/terraform.tfstate"
+    key    = "lambda/ttrpg_club_api_dev/terraform.tfstate"
     region = "eu-west-2"
   }
 }

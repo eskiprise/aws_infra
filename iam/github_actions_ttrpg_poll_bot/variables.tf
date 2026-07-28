@@ -1,6 +1,6 @@
 variable "github_repo" {
   type        = string
-  default     = "EskiSlav/ttrpg_poll_bot"
+  default     = "eskiprise@193757156/ttrpg_poll_bot@1133133400"
   # If AssumeRoleWithWebIdentity fails with a sub-claim mismatch, this GitHub account may
   # have "immutable IDs" enabled (as eskiprise/ttrpg_website did) — the OIDC token's `sub`
   # claim then looks like "repo:EskiSlav@<ownerId>/ttrpg_poll_bot@<repoId>:ref:..." instead

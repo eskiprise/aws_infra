@@ -6,7 +6,7 @@
 # type NONE, and the Lambda verifies the Cognito ID token itself when a route needs it.
 
 resource "aws_apigatewayv2_api" "ttrpg_club" {
-  name          = "ttrpg-club-api"
+  name          = "ttrpg-club-api-dev"
   protocol_type = "HTTP"
 
   cors_configuration {

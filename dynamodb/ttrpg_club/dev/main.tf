@@ -8,7 +8,7 @@ module "users" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name     = "ttrpg_club_users"
+  name     = "ttrpg_club_dev_users"
   hash_key = "userId"
 
   attributes = [
@@ -26,7 +26,7 @@ module "signup_requests" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name     = "ttrpg_club_signup_requests"
+  name     = "ttrpg_club_dev_signup_requests"
   hash_key = "requestId"
 
   attributes = [
@@ -59,7 +59,7 @@ module "signup_requests" {
 # it reads it via `${ssm:...}` instead of a manual --param, and this value updates itself
 # automatically on every apply (including if the table is ever destroyed and recreated).
 resource "aws_ssm_parameter" "signup_requests_stream_arn" {
-  name        = "/ttrpg_club/signup_requests_stream_arn"
+  name        = "/ttrpg_club/dev/signup_requests_stream_arn"
   type        = "String"
   value       = module.signup_requests.dynamodb_table_stream_arn
   description = "Stream ARN for ttrpg_club_signup_requests — consumed by ttrpg_poll_bot's notifySignup Lambda"
@@ -75,7 +75,7 @@ module "game_systems" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name     = "ttrpg_club_game_systems"
+  name     = "ttrpg_club_dev_game_systems"
   hash_key = "systemId"
 
   attributes = [
@@ -93,7 +93,7 @@ module "games" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name     = "ttrpg_club_games"
+  name     = "ttrpg_club_dev_games"
   hash_key = "gameId"
 
   attributes = [
@@ -111,7 +111,7 @@ module "game_participants" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name      = "ttrpg_club_game_participants"
+  name      = "ttrpg_club_dev_game_participants"
   hash_key  = "userId"
   range_key = "gameId"
 
@@ -131,7 +131,7 @@ module "game_poll_votes" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name      = "ttrpg_club_game_poll_votes"
+  name      = "ttrpg_club_dev_game_poll_votes"
   hash_key  = "gameId"
   range_key = "userId"
 
@@ -151,7 +151,7 @@ module "game_comments" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name      = "ttrpg_club_game_comments"
+  name      = "ttrpg_club_dev_game_comments"
   hash_key  = "gameId"
   range_key = "commentId"
 
@@ -171,7 +171,7 @@ module "settings" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
-  name     = "ttrpg_club_settings"
+  name     = "ttrpg_club_dev_settings"
   hash_key = "pk"
 
   attributes = [
@@ -194,7 +194,7 @@ module "telegram_rating_polls" {
   # carries poll_id + option_ids, not the original question). Each item also remembers
   # who ran the session (creatorUserId etc.) — the GSI below lets the club API answer
   # "My Games Conducted" without a table scan.
-  name     = "ttrpg_club_telegram_rating_polls"
+  name     = "ttrpg_club_dev_telegram_rating_polls"
   hash_key = "pollId"
 
   attributes = [
@@ -225,7 +225,7 @@ module "telegram_rating_votes" {
   # that Telegram user ever signed up on the club website. questionText is denormalized
   # onto each vote at write time (see telegram_rating_polls above) so reading a user's
   # history needs no second lookup.
-  name      = "ttrpg_club_telegram_rating_votes"
+  name      = "ttrpg_club_dev_telegram_rating_votes"
   hash_key  = "pollId"
   range_key = "telegramUserId"
 
@@ -257,7 +257,7 @@ module "telegram_feedback" {
   # the Mini App's feedback form, one item per submission for a given pollId. Kept
   # separate from telegram_rating_votes: that table is the quick 1-10 poll vote used for
   # stats math; this one is private qualitative feedback for the GM only.
-  name      = "ttrpg_club_telegram_feedback"
+  name      = "ttrpg_club_dev_telegram_feedback"
   hash_key  = "pollId"
   range_key = "feedbackId"
 
@@ -278,7 +278,7 @@ module "telegram_feedback" {
 }
 
 resource "aws_ssm_parameter" "telegram_feedback_stream_arn" {
-  name        = "/ttrpg_club/telegram_feedback_stream_arn"
+  name        = "/ttrpg_club/dev/telegram_feedback_stream_arn"
   type        = "String"
   value       = module.telegram_feedback.dynamodb_table_stream_arn
   description = "Stream ARN for ttrpg_club_telegram_feedback — consumed by ttrpg_poll_bot's notifyFeedback Lambda"

@@ -44,6 +44,11 @@ This repository represents the infrastructure for my personal AWS cloud
     existing Serverless deployment rather than starting fresh, see this module's
     `import-from-serverless.sh` — it imports the live resources with zero downtime
     instead of recreating them.
+    Also creates an isolated `-dev-` copy of all 3 functions (own IAM role, own bot
+    token, own `/dev/webhook` route on the same API Gateway) pointed at the
+    (currently empty) `dynamodb/ttrpg_club/prod` tables instead of the real `dev` ones —
+    a safe sandbox for testing bot changes without touching real club data. See
+    `../ttrpg_poll_bot/README_LAMBDA.md`'s "Dev Stage" section.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
 - Cognito: `ttrpg_club` — User Pool for the club website (admin-provisioned members only,
   no public self-signup).

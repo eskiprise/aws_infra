@@ -15,3 +15,33 @@ variable "mini_app_deep_link" {
   default     = "https://t.me/ttrpgpollbot/stats"
   description = "https://t.me/<bot_username>/<app_short_name> — set once the Mini App is registered via @BotFather's /newapp. Left blank until then; /stats replies with a \"temporarily unavailable\" message rather than a broken button."
 }
+
+variable "dev_admin_chat_id" {
+  type        = string
+  default     = ""
+  description = "Chat ID for the dev stage's signup notifications. Defaults to var.admin_chat_id if left blank."
+}
+
+variable "mini_app_deep_link_dev" {
+  type        = string
+  default     = ""
+  description = "Same as mini_app_deep_link, but for the second (dev/test) bot registered with @BotFather."
+}
+
+variable "ttrpg_prod_params" {
+  type        = map(string)
+  default     = {
+    "/ttrpg_club/prod/poll_bot/token" = "Token for the production bot, stored in SSM. Not in source control."
+    "/ttrpg_club/prod/telegram_admin_chat_id" = "Telegram chat ID for the admin chat, stored in SSM. Not in source control."
+  }
+  description = "Map of SSM parameter names to values for the production bot. The bot's token is stored in SSM, not in source control."
+}
+
+variable "ttrpg_dev_params" {
+  type        = map(string)
+  default     = {
+    "/ttrpg_club/dev/poll_bot/token" = "Token for the development bot, stored in SSM. Not in source control."
+    "/ttrpg_club/dev/telegram_admin_chat_id" = "Telegram chat ID for the admin chat, stored in SSM. Not in source control."
+  }
+  description = "Map of SSM parameter names to values for the development bot. The bot's token is stored in SSM, not in source control."
+}

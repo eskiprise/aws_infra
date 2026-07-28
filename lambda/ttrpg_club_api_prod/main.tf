@@ -45,7 +45,7 @@ module "lambda_function" {
     TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_name
     TABLE_TELEGRAM_RATING_POLLS = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_name
     TABLE_TELEGRAM_FEEDBACK     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_name
-    TELEGRAM_BOT_TOKEN_PARAM    = "/telegram/poll_bot/token"
+    TELEGRAM_BOT_TOKEN_PARAM    = "/ttrpg_club/prod/poll_bot/token"
   }
 }
 

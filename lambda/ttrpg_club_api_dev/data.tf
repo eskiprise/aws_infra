@@ -1,9 +1,9 @@
 data "aws_caller_identity" "current" {}
 
-# All 11 ttrpg_club DynamoDB tables (dev) now live in one consolidated state —
-# see dynamodb/ttrpg_club/dev/. This still only points at dev: there's no prod
-# Lambda/API deployment yet, so dynamodb/ttrpg_club/prod's tables sit unused
-# until that's built later.
+# Dev counterpart to ../ttrpg_club_api_prod — reads dynamodb/ttrpg_club/dev (the real,
+# live table data) plus this module's own dev cognito/avatars remote states. Replaces
+# the old unsuffixed ../ttrpg_club_api module (retire that one once this is applied and
+# cut over — see aws_infra/README.md).
 data "terraform_remote_state" "dynamodb" {
   backend = "s3"
   config = {
@@ -17,7 +17,7 @@ data "terraform_remote_state" "cognito" {
   backend = "s3"
   config = {
     bucket = "compliment-bot-terraform-state"
-    key    = "cognito/ttrpg_club/terraform.tfstate"
+    key    = "cognito/ttrpg_club_dev/terraform.tfstate"
     region = "eu-west-2"
   }
 }
@@ -26,7 +26,7 @@ data "terraform_remote_state" "avatars_s3" {
   backend = "s3"
   config = {
     bucket = "compliment-bot-terraform-state"
-    key    = "s3/ttrpg_club_avatars/terraform.tfstate"
+    key    = "s3/ttrpg_club_avatars_dev/terraform.tfstate"
     region = "eu-west-2"
   }
 }
@@ -57,6 +57,6 @@ data "template_file" "policy" {
     telegram_feedback_table     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_arn
     # Not managed by any Terraform state (created ad hoc alongside ttrpg_poll_bot) —
     # constructed directly rather than via a remote state lookup.
-    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/telegram/poll_bot/token"
+    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/poll_bot/token"
   }
 }

@@ -57,6 +57,6 @@ data "template_file" "policy" {
     # Not managed by any Terraform state (created ad hoc alongside ttrpg_poll_bot) —
     # constructed directly rather than via a remote state lookup. Same token as dev: this
     # param verifies Telegram initData signatures, unrelated to which table set is read.
-    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/telegram/poll_bot/token"
+    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/prod/poll_bot/token"
   }
 }

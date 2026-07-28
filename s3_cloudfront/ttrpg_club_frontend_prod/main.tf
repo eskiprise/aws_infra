@@ -1,5 +1,9 @@
+# Prod counterpart to ../ttrpg_club_frontend — same shape, separate bucket/distribution.
+# Not to be confused with ../ttrpg_club_frontend_dev, which is an unrelated sandbox for
+# ttrpg_poll_bot's Mini App testing, not a real environment for this website.
+
 resource "aws_s3_bucket" "frontend" {
-  bucket = "ttrpg-club-frontend"
+  bucket = "ttrpg-club-frontend-prod"
 
   tags = {
     Terraform = "true"
@@ -16,7 +20,7 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 }
 
 resource "aws_cloudfront_origin_access_control" "frontend" {
-  name                              = "ttrpg-club-frontend"
+  name                              = "ttrpg-club-frontend-prod"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
@@ -26,7 +30,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
   default_root_object = "index.html"
   price_class         = "PriceClass_100"
-  comment             = "TTRPG club website — static frontend"
+  comment             = "TTRPG club website — static frontend (prod)"
 
   origin {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name

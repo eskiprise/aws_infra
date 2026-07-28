@@ -6,7 +6,7 @@ variable "region" {
 
 variable "function_name" {
   type        = string
-  default     = "ttrpg-club-api"
+  default     = "ttrpg-club-api-dev"
   description = "Name of the API Lambda function"
 }
 

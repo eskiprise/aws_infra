@@ -7,9 +7,10 @@ This repository represents the infrastructure for my personal AWS cloud
   - users: table where telegram users are stored;
   - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 11 ttrpg_club tables,
     one environment per folder, each folder a single Terraform state** — no more visiting
-    a separate directory per table. `dev` is the live environment (real member data);
-    `prod` is a brand-new, empty environment provisioned ahead of when a separate prod
-    website/API gets built (nothing points at it yet). The 11 tables in each: `users`,
+    a separate directory per table. `dev` is the live environment (real member data,
+    read by `lambda/ttrpg_club_api`); `prod` is a separate, empty environment, now read
+    by `lambda/ttrpg_club_api_prod` — see "Production website stack" below. The 11 tables
+    in each: `users`,
     `signup_requests`, `game_systems`, `games`, `game_participants`, `game_poll_votes`,
     `game_comments`, `settings` (the original 8, see `../ttrpg_website2` for the
     application code), plus `telegram_rating_polls` / `telegram_rating_votes` (the
@@ -33,7 +34,8 @@ This repository represents the infrastructure for my personal AWS cloud
   - bot: Lambda that processes all incoming messages;
   - json_refiner: a bot that formats "Python Dict" to standard JSON format;
   - ttrpg_club_api: the TTRPG club website's API (Node.js/TS, one Lambda behind an HTTP API
-    that routes internally — see ttrpg_website2/backend).
+    that routes internally — see ttrpg_website2/backend). `ttrpg_club_api_prod` is its
+    full production counterpart — see "Production website stack" below.
   - ttrpg_poll_bot: the club's Telegram bot (Python), 3 functions — `webhook` (behind its
     own HTTP API, receives Telegram updates), `notifySignup` and `notifyFeedback` (each
     triggered directly by a DynamoDB Stream from two of the `dynamodb/ttrpg_club/dev`
@@ -51,9 +53,12 @@ This repository represents the infrastructure for my personal AWS cloud
     `../ttrpg_poll_bot/README_LAMBDA.md`'s "Dev Stage" section.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
 - Cognito: `ttrpg_club` — User Pool for the club website (admin-provisioned members only,
-  no public self-signup).
+  no public self-signup). `ttrpg_club_prod` is a separate, empty prod user pool — see
+  "Production website stack" below.
 - S3 / CloudFront: `ttrpg_club_frontend` (static site hosting) and `ttrpg_club_avatars`
-  (member/GM profile pictures).
+  (member/GM profile pictures). `ttrpg_club_frontend_prod` and `ttrpg_club_avatars_prod`
+  are their prod counterparts (`ttrpg_club_frontend_dev`, despite the name, is unrelated —
+  it's a sandbox for `ttrpg_poll_bot`'s Mini App testing, not a website environment).
 - SSM: the generic `ssm` module (personal bot secrets). (An earlier `ssm/ttrpg_club`
   module briefly existed for a dedicated club bot token/chat-id — since superseded by
   reusing `ttrpg_poll_bot` instead, those files were removed. The two placeholder
@@ -90,9 +95,6 @@ which reads all 11 table outputs from it):
    once you've registered the Mini App with @BotFather (see
    `../ttrpg_poll_bot/README_LAMBDA.md`'s Personal Stats and Session Feedback sections).
 
-`dynamodb/ttrpg_club/prod` can be applied independently at any time (steps above are
-dev-only) — it's a self-contained, empty environment nothing else references yet.
-
 After step 4, sync the frontend build and invalidate the CDN cache:
 ```
 npm run build --workspace frontend   # in ttrpg_website2, with .env pointed at the outputs below
@@ -108,6 +110,36 @@ Frontend `.env` values come from these modules' outputs: `VITE_API_BASE_URL` ←
 The very first admin needs to be created manually (there's no admin until one exists):
 `aws cognito-idp admin-create-user` + `aws cognito-idp admin-add-user-to-group --group-name admin`,
 plus a matching item in `ttrpg_club_users` with `"roles": ["admin"]`.
+
+### Production website stack
+
+A second, fully independent copy of the whole website stack — its own Cognito user
+pool, avatars bucket, frontend bucket/CloudFront, and API Lambda/API Gateway — reading
+`dynamodb/ttrpg_club/prod` (empty; a brand-new member base, not the real `dev` data).
+No custom domain yet — both stacks use bare CloudFront/execute-api URLs. Apply order,
+same dependency shape as the dev stack above:
+1. `dynamodb/ttrpg_club/prod` (already exists/applied)
+2. `cognito/ttrpg_club_prod`
+3. `s3/ttrpg_club_avatars_prod`
+4. `s3_cloudfront/ttrpg_club_frontend_prod`
+5. `npm run build --workspace backend` in `ttrpg_website2` (same bundle `lambda/ttrpg_club_api_prod` reads — both stacks run identical code)
+6. `lambda/ttrpg_club_api_prod`
+7. Re-apply `iam/github_actions_ttrpg_club` — its policy now covers both stacks, and it reads step 4's and step 6's outputs via remote state, so it must come *after* them.
+
+Then the same frontend sync/invalidation and first-admin steps as above, targeted at
+this stack's own bucket/distribution/user pool (nothing is shared between the two
+stacks — a prod admin has to be created here too, independently of dev's).
+
+**CI/CD branch promotion**: `ttrpg_website2`'s `deploy-backend.yml` / `deploy-frontend.yml`
+trigger on push to either `develop` (deploys to the dev stack) or `main` (deploys to
+this prod stack), selecting a GitHub Environment (`development` / `production`) by
+branch name so each deploy reads that environment's own variables
+(`LAMBDA_FUNCTION_NAME`, `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`,
+`VITE_API_BASE_URL`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`,
+`VITE_AVATAR_CDN_BASE_URL`) — both environments need these 7 variables set (in the repo's
+Settings → Environments), pointed at each stack's own Terraform outputs. The
+`AWS_DEPLOY_ROLE_ARN` secret is shared (one broadened role, not per-environment) since
+step 7 above already scopes its policy to both stacks' exact resource ARNs.
 
 ## Lambda
 To deploy lambda functions it is needed to have them locally near the "aws_infra" repository.

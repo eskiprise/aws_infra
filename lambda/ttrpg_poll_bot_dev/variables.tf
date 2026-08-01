@@ -12,7 +12,7 @@ variable "admin_chat_id" {
 
 variable "mini_app_deep_link" {
   type        = string
-  default     = ""
+  default     = "https://t.me/ttrpgpolltestbot/stats"
   description = "https://t.me/<dev_bot_username>/<app_short_name> — set once the dev Mini App is registered via @BotFather's /newapp. Left blank until then; /stats replies with a \"temporarily unavailable\" message rather than a broken button."
 }
 

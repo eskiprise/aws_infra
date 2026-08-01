@@ -54,6 +54,7 @@ locals {
     "POST /telegram/games/conducted",
     "POST /telegram/games/all",
     "POST /telegram/games/{pollId}/voters",
+    "POST /telegram/leaderboard",
     "GET /me",
     "GET /me/stats",
     "PATCH /me/profile",

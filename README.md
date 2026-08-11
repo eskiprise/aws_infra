@@ -26,6 +26,16 @@ This repository represents the infrastructure for my personal AWS cloud
     moves each table's existing Terraform state into the consolidated one via
     `terraform state mv` (never destroys/recreates anything). Only delete the old
     directories after `terraform plan` in the new one shows "No changes."
+  - `dynamodb/entutor/prod/`: **all 5 tables for the EnTutor English-vocabulary bot
+    in one folder / one state**, same consolidated shape as `ttrpg_club` above.
+    `entutor_prod_users` (an `active-index` GSI so the hourly scheduler never scans),
+    `entutor_prod_words` (a `cefr-rank-index` GSI — "next unseen words at this level,
+    most frequent first" in a single Query), `entutor_prod_cards` (per-user spaced-
+    repetition state, with a `dueDate-index` **LSI** driving the one query behind every
+    daily session), `entutor_prod_exercises` (the cloze exercises — global and shared by
+    every user, which is why adding users adds no content cost), and
+    `entutor_prod_sessions` (one day's seven items; **TTL on `expiresAt`** so it prunes
+    itself). Application code is in `../entutor`.
 - Lambda. Every lambda is connected to my TG Bots.
   - bot_alert: Lambda which is triggered by cron and sends users compliments;
   - bot: Lambda that processes all incoming messages;
@@ -48,6 +58,20 @@ This repository represents the infrastructure for my personal AWS cloud
     these migrations, so its registered Telegram webhook was never disrupted). If
     migrating an existing Serverless deployment from scratch, see
     `ttrpg_poll_bot_prod/import-from-serverless.sh`.
+  - `entutor_prod`: the EnTutor English-vocabulary bot (Python, see `../entutor`), 3
+    functions behind one shared IAM role — `webhook` (behind its own HTTP API, receives
+    Telegram updates and grades inline-button answers), `scheduler` (EventBridge, runs
+    **hourly** and queues the users whose *local* clock reads 14:00 — that's how
+    per-user timezones work without a cron rule per zone), and `sender` (SQS-triggered,
+    builds and delivers one user's daily session). The SQS queue between scheduler and
+    sender exists for Telegram's ~30 msg/s cap: reserved concurrency on `sender`
+    throttles the fan-out and a DLQ catches users who fail three times. Terraform-managed
+    SSM placeholders for the bot token and the webhook secret
+    (`/entutor/prod/bot/token`, `/entutor/prod/bot/webhook_secret`) — the webhook Lambda
+    verifies Telegram's `X-Telegram-Bot-Api-Secret-Token` header and 403s otherwise,
+    since the API Gateway URL is necessarily public. **No Anthropic API key**: exercise
+    content is generated offline and seeded into DynamoDB, so nothing here calls an LLM
+    at runtime.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
 - Cognito: `ttrpg_club_dev` / `ttrpg_club_prod` — separate User Pools for the club
   website (admin-provisioned members only, no public self-signup), one per environment.
@@ -63,6 +87,12 @@ This repository represents the infrastructure for my personal AWS cloud
   stack). (An early, now-superseded `ssm/ttrpg_club` module's two placeholder
   parameters may still exist, unused — safe to ignore or delete manually via
   `aws ssm delete-parameter`.)
+- IAM: `github_actions_ttrpg_club`, `github_actions_ttrpg_poll_bot`, and
+  `github_actions_entutor` — one OIDC deploy role per repo. All three share the single
+  account-wide `token.actions.githubusercontent.com` OIDC provider (AWS allows only one
+  per URL), which `github_actions_ttrpg_club` creates and the others reference. Each role
+  is deliberately narrow: `lambda:UpdateFunctionCode` on its own functions and nothing
+  else, because Terraform owns the infrastructure and CI only ships code.
 - Security Groups
 - VPC
 

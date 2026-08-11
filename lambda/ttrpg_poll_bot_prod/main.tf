@@ -78,8 +78,13 @@ resource "aws_iam_role_policy" "bot_permissions" {
         Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_rating_polls"
       },
       {
-        Effect   = "Allow"
-        Action   = ["dynamodb:PutItem"]
+        Effect = "Allow"
+        # DeleteItem is required for a retracted vote — lambda_handler.py's clear_vote()
+        # deletes the row rather than overwriting it. Missing this doesn't error loudly
+        # in Telegram (the bot's webhook response to Telegram is unaffected either way),
+        # it just silently fails inside handle_poll_answer, so a retracted vote stays
+        # counted forever unless you happen to check CloudWatch logs.
+        Action   = ["dynamodb:PutItem", "dynamodb:DeleteItem"]
         Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_rating_votes"
       },
     ]

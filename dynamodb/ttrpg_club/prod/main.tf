@@ -15,6 +15,8 @@ module "users" {
     { name = "userId", type = "S" }
   ]
 
+  point_in_time_recovery_enabled = true
+
   tags = {
     Terraform   = "true"
     Project     = "ttrpg-club"
@@ -44,6 +46,8 @@ module "signup_requests" {
 
   stream_enabled   = true
   stream_view_type = "NEW_IMAGE"
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"
@@ -76,6 +80,8 @@ module "game_systems" {
     { name = "systemId", type = "S" }
   ]
 
+  point_in_time_recovery_enabled = true
+
   tags = {
     Terraform   = "true"
     Project     = "ttrpg-club"
@@ -93,6 +99,8 @@ module "games" {
   attributes = [
     { name = "gameId", type = "S" }
   ]
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"
@@ -114,6 +122,8 @@ module "game_participants" {
     { name = "gameId", type = "S" }
   ]
 
+  point_in_time_recovery_enabled = true
+
   tags = {
     Terraform   = "true"
     Project     = "ttrpg-club"
@@ -133,6 +143,8 @@ module "game_poll_votes" {
     { name = "gameId", type = "S" },
     { name = "userId", type = "S" }
   ]
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"
@@ -154,6 +166,8 @@ module "game_comments" {
     { name = "commentId", type = "S" }
   ]
 
+  point_in_time_recovery_enabled = true
+
   tags = {
     Terraform   = "true"
     Project     = "ttrpg-club"
@@ -171,6 +185,8 @@ module "settings" {
   attributes = [
     { name = "pk", type = "S" }
   ]
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"
@@ -198,6 +214,8 @@ module "telegram_rating_polls" {
       projection_type = "ALL"
     }
   ]
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"
@@ -227,6 +245,8 @@ module "telegram_rating_votes" {
     }
   ]
 
+  point_in_time_recovery_enabled = true
+
   tags = {
     Terraform   = "true"
     Project     = "ttrpg-club"
@@ -249,6 +269,8 @@ module "telegram_feedback" {
 
   stream_enabled   = true
   stream_view_type = "NEW_IMAGE"
+
+  point_in_time_recovery_enabled = true
 
   tags = {
     Terraform   = "true"

@@ -3,11 +3,13 @@ locals {
   # dynamodb/ttrpg_club/dev tables — separate from prod's, so testing here can never
   # touch the real bot's data.
   dev_environment_variables = {
-    TELEGRAM_TOKEN_SSM_PARAMETER = "/ttrpg_club/dev/poll_bot/token"
-    ADMIN_CHAT_ID                = var.admin_chat_id
-    TELEGRAM_RATING_POLLS_TABLE  = "ttrpg_club_dev_telegram_rating_polls"
-    TELEGRAM_RATING_VOTES_TABLE  = "ttrpg_club_dev_telegram_rating_votes"
-    MINI_APP_DEEP_LINK           = var.mini_app_deep_link
+    TELEGRAM_TOKEN_SSM_PARAMETER  = "/ttrpg_club/dev/poll_bot/token"
+    ADMIN_CHAT_ID_SSM_PARAMETER   = "/ttrpg_club/dev/telegram_admin_chat_id"
+    ALLOWED_CHAT_ID_SSM_PARAMETER = "/ttrpg_club/dev/telegram_club_chat_id"
+    TELEGRAM_RATING_POLLS_TABLE   = "ttrpg_club_dev_telegram_rating_polls"
+    TELEGRAM_RATING_VOTES_TABLE   = "ttrpg_club_dev_telegram_rating_votes"
+    MINI_APP_DEEP_LINK            = var.mini_app_deep_link
+    BOT_USERNAME                  = var.bot_username
   }
 }
 
@@ -52,9 +54,13 @@ resource "aws_iam_role_policy" "bot_permissions" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/poll_bot/token"
+        Effect = "Allow"
+        Action = ["ssm:GetParameter"]
+        Resource = [
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/poll_bot/token",
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/telegram_admin_chat_id",
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/telegram_club_chat_id",
+        ]
       },
       {
         Effect = "Allow"

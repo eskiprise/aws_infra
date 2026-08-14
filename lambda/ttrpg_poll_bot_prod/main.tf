@@ -1,10 +1,12 @@
 locals {
   prod_environment_variables = {
-    TELEGRAM_TOKEN_SSM_PARAMETER = "/ttrpg_club/prod/poll_bot/token"
-    ADMIN_CHAT_ID                = var.admin_chat_id
-    TELEGRAM_RATING_POLLS_TABLE  = "ttrpg_club_prod_telegram_rating_polls"
-    TELEGRAM_RATING_VOTES_TABLE  = "ttrpg_club_prod_telegram_rating_votes"
-    MINI_APP_DEEP_LINK           = var.mini_app_deep_link
+    TELEGRAM_TOKEN_SSM_PARAMETER  = "/ttrpg_club/prod/poll_bot/token"
+    ADMIN_CHAT_ID_SSM_PARAMETER   = "/ttrpg_club/prod/telegram_admin_chat_id"
+    ALLOWED_CHAT_ID_SSM_PARAMETER = "/ttrpg_club/prod/telegram_club_chat_id"
+    TELEGRAM_RATING_POLLS_TABLE   = "ttrpg_club_prod_telegram_rating_polls"
+    TELEGRAM_RATING_VOTES_TABLE   = "ttrpg_club_prod_telegram_rating_votes"
+    MINI_APP_DEEP_LINK            = var.mini_app_deep_link
+    BOT_USERNAME                  = var.bot_username
   }
 }
 
@@ -52,9 +54,13 @@ resource "aws_iam_role_policy" "bot_permissions" {
         ]
       },
       {
-        Effect   = "Allow"
-        Action   = ["ssm:GetParameter"]
-        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/prod/poll_bot/token"
+        Effect = "Allow"
+        Action = ["ssm:GetParameter"]
+        Resource = [
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/prod/poll_bot/token",
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/prod/telegram_admin_chat_id",
+          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/prod/telegram_club_chat_id",
+        ]
       },
       {
         Effect = "Allow"
@@ -106,6 +112,12 @@ module "webhook" {
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
 
+  # Structured JSON logs so every line reliably carries a "level" field —
+  # monitoring/ttrpg_club_prod_alerts filters on level=ERROR to forward errors to
+  # Telegram. Without this, logger.error()/uncaught tracebacks have no dependable
+  # machine-parseable marker to filter on.
+  logging_log_format = "JSON"
+
   # Built by `./build.sh` — the Python equivalent of the website's esbuild step. Only
   # used for the INITIAL apply/import — every later code change ships via CI's
   # `aws lambda update-function-code`. All 3 modules share this same source_path
@@ -136,6 +148,7 @@ module "notify_signup" {
   create_role                   = false
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
+  logging_log_format            = "JSON"
 
   source_path = [
     {
@@ -162,6 +175,7 @@ module "notify_feedback" {
   create_role                   = false
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
+  logging_log_format            = "JSON"
 
   source_path = [
     {

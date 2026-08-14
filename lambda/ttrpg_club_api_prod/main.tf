@@ -15,6 +15,12 @@ module "lambda_function" {
 
   attach_cloudwatch_logs_policy = true
 
+  # Structured JSON logs (rather than plain text) so every log line reliably carries a
+  # "level" field — monitoring/ttrpg_club_prod_alerts filters on level=ERROR to forward
+  # errors to Telegram. Without this, console.error() output has no dependable machine-
+  # parseable marker to filter on.
+  logging_log_format = "JSON"
+
   create_role = false
   lambda_role = aws_iam_role.lambda_role.arn
 

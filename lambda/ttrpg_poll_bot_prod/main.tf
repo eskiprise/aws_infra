@@ -7,6 +7,7 @@ locals {
     TELEGRAM_RATING_VOTES_TABLE   = "ttrpg_club_prod_telegram_rating_votes"
     MINI_APP_DEEP_LINK            = var.mini_app_deep_link
     BOT_USERNAME                  = var.bot_username
+    CLUB_WEBSITE_URL              = var.club_website_url
   }
 }
 
@@ -131,6 +132,12 @@ module "webhook" {
   ]
   hash_extra = "webhook"
 
+  # Enforces the "INITIAL apply/import only" comment above: without this, a later
+  # `terraform apply` for an unrelated change (env vars, IAM) would detect that AWS's
+  # real deployed hash no longer matches this stale local build/ and silently revert the
+  # function back to whatever was last built locally, undoing CI's deploy.
+  ignore_source_code_hash = true
+
   environment_variables = local.prod_environment_variables
 }
 
@@ -158,6 +165,8 @@ module "notify_signup" {
   ]
   hash_extra = "notify_signup"
 
+  ignore_source_code_hash = true
+
   environment_variables = local.prod_environment_variables
 }
 
@@ -184,6 +193,8 @@ module "notify_feedback" {
     }
   ]
   hash_extra = "notify_feedback"
+
+  ignore_source_code_hash = true
 
   environment_variables = local.prod_environment_variables
 }

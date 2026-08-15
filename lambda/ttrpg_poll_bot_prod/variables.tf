@@ -16,6 +16,12 @@ variable "bot_username" {
   description = "This bot's own @username (no leading @), used in the rejection message sent to unauthorized groups so people know where to DM it."
 }
 
+variable "club_website_url" {
+  type        = string
+  default     = "https://djgwgm5fzzf.cloudfront.net"
+  description = "URL of the club's website, linked from /start. Empty until you set it — /start is sent without a website button until then."
+}
+
 variable "ttrpg_prod_params" {
   type = map(string)
   default = {

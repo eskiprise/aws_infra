@@ -5,7 +5,7 @@ This repository represents the infrastructure for my personal AWS cloud
 - DynamoDB Tables
   - compliments: table for the compliments for my Telegram Bot;
   - users: table where telegram users are stored;
-  - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 11 ttrpg_club tables,
+  - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 14 ttrpg_club tables,
     one environment per folder, each folder a single Terraform state** — no more visiting
     a separate directory per table. Two fully independent, symmetric environments: table
     names are prefixed `ttrpg_club_dev_*` / `ttrpg_club_prod_*` respectively. The 11
@@ -112,7 +112,7 @@ DynamoDB tables, own Cognito pool, own avatars bucket, own frontend bucket/Cloud
 own API Lambda/API Gateway). No custom domain yet — both use bare
 CloudFront/execute-api URLs. Apply order per environment (`<env>` = `dev` or `prod`;
 order matters where one module reads another's remote state):
-1. `dynamodb/ttrpg_club/<env>` (all 11 tables, one `terraform apply`)
+1. `dynamodb/ttrpg_club/<env>` (all 14 tables, one `terraform apply`)
 2. `cognito/ttrpg_club_<env>`
 3. `s3/ttrpg_club_avatars_<env>`
 4. `s3_cloudfront/ttrpg_club_frontend_<env>`

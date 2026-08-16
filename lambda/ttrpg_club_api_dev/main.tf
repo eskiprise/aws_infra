@@ -44,6 +44,9 @@ module "lambda_function" {
     TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_name
     TABLE_TELEGRAM_RATING_POLLS = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_name
     TABLE_TELEGRAM_FEEDBACK     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_name
+    TABLE_TELEGRAM_XP_LEDGER    = data.terraform_remote_state.dynamodb.outputs.telegram_xp_ledger_table_name
+    TABLE_TELEGRAM_PLAYER_LEVEL = data.terraform_remote_state.dynamodb.outputs.telegram_player_level_table_name
+    TABLE_TELEGRAM_ACHIEVEMENTS = data.terraform_remote_state.dynamodb.outputs.telegram_achievements_table_name
     TELEGRAM_BOT_TOKEN_PARAM    = "/ttrpg_club/dev/poll_bot/token"
   }
 }

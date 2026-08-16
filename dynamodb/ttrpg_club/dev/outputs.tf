@@ -74,3 +74,24 @@ output "telegram_feedback_table_arn" {
 output "telegram_feedback_table_name" {
   value = module.telegram_feedback.dynamodb_table_id
 }
+
+output "telegram_xp_ledger_table_arn" {
+  value = module.telegram_xp_ledger.dynamodb_table_arn
+}
+output "telegram_xp_ledger_table_name" {
+  value = module.telegram_xp_ledger.dynamodb_table_id
+}
+
+output "telegram_player_level_table_arn" {
+  value = module.telegram_player_level.dynamodb_table_arn
+}
+output "telegram_player_level_table_name" {
+  value = module.telegram_player_level.dynamodb_table_id
+}
+
+output "telegram_achievements_table_arn" {
+  value = module.telegram_achievements.dynamodb_table_arn
+}
+output "telegram_achievements_table_name" {
+  value = module.telegram_achievements.dynamodb_table_id
+}

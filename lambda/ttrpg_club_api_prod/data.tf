@@ -54,6 +54,9 @@ data "template_file" "policy" {
     telegram_rating_votes_table = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_arn
     telegram_rating_polls_table = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_arn
     telegram_feedback_table     = data.terraform_remote_state.dynamodb.outputs.telegram_feedback_table_arn
+    telegram_xp_ledger_table    = data.terraform_remote_state.dynamodb.outputs.telegram_xp_ledger_table_arn
+    telegram_player_level_table = data.terraform_remote_state.dynamodb.outputs.telegram_player_level_table_arn
+    telegram_achievements_table = data.terraform_remote_state.dynamodb.outputs.telegram_achievements_table_arn
     # Not managed by any Terraform state (created ad hoc alongside ttrpg_poll_bot) —
     # constructed directly rather than via a remote state lookup. Same token as dev: this
     # param verifies Telegram initData signatures, unrelated to which table set is read.

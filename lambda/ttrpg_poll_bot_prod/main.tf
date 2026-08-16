@@ -5,6 +5,9 @@ locals {
     ALLOWED_CHAT_ID_SSM_PARAMETER = "/ttrpg_club/prod/telegram_club_chat_id"
     TELEGRAM_RATING_POLLS_TABLE   = "ttrpg_club_prod_telegram_rating_polls"
     TELEGRAM_RATING_VOTES_TABLE   = "ttrpg_club_prod_telegram_rating_votes"
+    TELEGRAM_XP_LEDGER_TABLE      = "ttrpg_club_prod_telegram_xp_ledger"
+    TELEGRAM_PLAYER_LEVEL_TABLE   = "ttrpg_club_prod_telegram_player_level"
+    TELEGRAM_ACHIEVEMENTS_TABLE   = "ttrpg_club_prod_telegram_achievements"
     MINI_APP_DEEP_LINK            = var.mini_app_deep_link
     BOT_USERNAME                  = var.bot_username
     CLUB_WEBSITE_URL              = var.club_website_url
@@ -93,6 +96,24 @@ resource "aws_iam_role_policy" "bot_permissions" {
         # counted forever unless you happen to check CloudWatch logs.
         Action   = ["dynamodb:PutItem", "dynamodb:DeleteItem"]
         Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_rating_votes"
+      },
+      {
+        Effect = "Allow"
+        # Query is needed here (uniquely among this bot's tables) for the weekly-bonus
+        # check — counting a user's vote-XP ledger entries within the current ISO week.
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"]
+        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_xp_ledger"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_player_level"
+      },
+      {
+        Effect = "Allow"
+        # PutItem only — this bot awards achievements but never reads one back.
+        Action   = ["dynamodb:PutItem"]
+        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/ttrpg_club_prod_telegram_achievements"
       },
     ]
   })

@@ -291,3 +291,75 @@ resource "aws_ssm_parameter" "telegram_feedback_stream_arn" {
     Environment = "production"
   }
 }
+
+module "telegram_xp_ledger" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.1.0"
+
+  # Append-only audit trail of every XP award — the sole source of truth for "was this
+  # already awarded" (conditional PutItem on sourceId), written only by ttrpg_poll_bot.
+  # Never deleted, so retracting+revoting a poll answer can never re-earn XP.
+  name      = "ttrpg_club_prod_telegram_xp_ledger"
+  hash_key  = "telegramUserId"
+  range_key = "sourceId"
+
+  attributes = [
+    { name = "telegramUserId", type = "N" },
+    { name = "sourceId", type = "S" }
+  ]
+
+  point_in_time_recovery_enabled = true
+
+  tags = {
+    Terraform   = "true"
+    Project     = "ttrpg-club"
+    Environment = "production"
+  }
+}
+
+module "telegram_player_level" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.1.0"
+
+  # One row per player: current level/XP plus lifetime gamesPlayed/feedbackGiven
+  # counters (used for achievement tiers). Written only by ttrpg_poll_bot; read by the
+  # website backend for the Mini App's stats/achievements pages.
+  name     = "ttrpg_club_prod_telegram_player_level"
+  hash_key = "telegramUserId"
+
+  attributes = [
+    { name = "telegramUserId", type = "N" }
+  ]
+
+  point_in_time_recovery_enabled = true
+
+  tags = {
+    Terraform   = "true"
+    Project     = "ttrpg-club"
+    Environment = "production"
+  }
+}
+
+module "telegram_achievements" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.1.0"
+
+  # One-time badges, no XP — a row's existence is the unlock (conditional PutItem on
+  # achievementId). Written only by ttrpg_poll_bot; read by the website backend.
+  name      = "ttrpg_club_prod_telegram_achievements"
+  hash_key  = "telegramUserId"
+  range_key = "achievementId"
+
+  attributes = [
+    { name = "telegramUserId", type = "N" },
+    { name = "achievementId", type = "S" }
+  ]
+
+  point_in_time_recovery_enabled = true
+
+  tags = {
+    Terraform   = "true"
+    Project     = "ttrpg-club"
+    Environment = "production"
+  }
+}

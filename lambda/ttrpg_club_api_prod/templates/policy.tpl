@@ -39,7 +39,10 @@
         "${telegram_rating_votes_table}/index/*",
         "${telegram_rating_polls_table}",
         "${telegram_rating_polls_table}/index/*",
-        "${telegram_feedback_table}"
+        "${telegram_feedback_table}",
+        "${telegram_xp_ledger_table}",
+        "${telegram_player_level_table}",
+        "${telegram_achievements_table}"
       ]
     },
     {

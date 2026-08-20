@@ -37,6 +37,8 @@ locals {
     "GET /game-masters/{userId}",
     "GET /games",
     "GET /games/{gameId}",
+    "GET /game-log",
+    "GET /game-log/{pollId}",
     "POST /admin/games",
     "PATCH /admin/games/{gameId}",
     "DELETE /admin/games/{gameId}",

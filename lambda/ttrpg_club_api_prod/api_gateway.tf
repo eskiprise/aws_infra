@@ -10,7 +10,7 @@ resource "aws_apigatewayv2_api" "ttrpg_club" {
   protocol_type = "HTTP"
 
   cors_configuration {
-    allow_origins = [var.cors_allowed_origin]
+    allow_origins = var.cors_allowed_origins
     allow_methods = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
     allow_headers = ["Authorization", "Content-Type"]
   }

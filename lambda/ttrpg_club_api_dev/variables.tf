@@ -10,10 +10,13 @@ variable "function_name" {
   description = "Name of the API Lambda function"
 }
 
-variable "cors_allowed_origin" {
-  type        = string
-  default     = "*"
-  description = "Origin allowed to call the HTTP API. Narrow this to the deployed frontend's CloudFront domain (and/or http://localhost:5173 for local dev) once known — this default is permissive only to unblock the first apply."
+variable "cors_allowed_origins" {
+  type = list(string)
+  default = [
+    "https://dev.dnaclub.com.ua",
+    "http://localhost:5173", # npm run dev:frontend points at this deployed dev API directly
+  ]
+  description = "Origins allowed to call the HTTP API."
 }
 
 variable "reserved_concurrency" {

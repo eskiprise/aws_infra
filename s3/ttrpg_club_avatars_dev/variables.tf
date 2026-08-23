@@ -1,5 +1,8 @@
-variable "cors_allowed_origin" {
-  type        = string
-  default     = "*"
-  description = "Origin allowed to PUT avatar uploads via presigned URL. Narrow to the deployed dev frontend's CloudFront domain (and/or http://localhost:5173) once known."
+variable "cors_allowed_origins" {
+  type = list(string)
+  default = [
+    "https://dev.dnaclub.com.ua",
+    "http://localhost:5173", # npm run dev:frontend uploads avatars straight to this bucket
+  ]
+  description = "Origins allowed to PUT avatar uploads via presigned URL."
 }

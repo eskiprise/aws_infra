@@ -18,7 +18,7 @@ variable "bot_username" {
 
 variable "club_website_url" {
   type        = string
-  default     = "https://djgwgm5fzzf.cloudfront.net"
+  default     = "https://dnaclub.com.ua"
   description = "URL of the club's website, linked from /start. Empty until you set it — /start is sent without a website button until then."
 }
 

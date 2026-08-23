@@ -39,7 +39,7 @@ module "lambda_function" {
     COGNITO_USER_POOL_ID    = data.terraform_remote_state.cognito.outputs.user_pool_id
     COGNITO_CLIENT_ID       = data.terraform_remote_state.cognito.outputs.web_client_id
     AVATAR_BUCKET           = data.terraform_remote_state.avatars_s3.outputs.bucket_name
-    ALLOWED_ORIGIN          = var.cors_allowed_origin
+    ALLOWED_ORIGINS         = join(",", var.cors_allowed_origins)
 
     TABLE_TELEGRAM_RATING_VOTES = data.terraform_remote_state.dynamodb.outputs.telegram_rating_votes_table_name
     TABLE_TELEGRAM_RATING_POLLS = data.terraform_remote_state.dynamodb.outputs.telegram_rating_polls_table_name

@@ -109,25 +109,42 @@ To apply all of the resources you need to apply them in particular order:
 
 Two fully independent, symmetric environments — nothing is shared between them (own
 DynamoDB tables, own Cognito pool, own avatars bucket, own frontend bucket/CloudFront,
-own API Lambda/API Gateway). No custom domain yet — both use bare
-CloudFront/execute-api URLs. Apply order per environment (`<env>` = `dev` or `prod`;
-order matters where one module reads another's remote state):
+own API Lambda/API Gateway) except the one genuinely shared piece: `dns/dnaclub_com_ua`
+(one Route 53 zone + two ACM certs covering both `dnaclub.com.ua`/`www.dnaclub.com.ua`
+(prod) and `dev.dnaclub.com.ua` (dev), since it's a single registered domain). Apply
+order per environment (`<env>` = `dev` or `prod`; order matters where one module reads
+another's remote state):
 1. `dynamodb/ttrpg_club/<env>` (all 14 tables, one `terraform apply`)
 2. `cognito/ttrpg_club_<env>`
 3. `s3/ttrpg_club_avatars_<env>`
-4. `s3_cloudfront/ttrpg_club_frontend_<env>`
-5. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code both
+4. `dns/dnaclub_com_ua` — **once per domain, not per environment.** Creates the Route 53
+   zone and both certificates; requires the domain's nameservers to already be pointed
+   at this zone's `name_servers` output (registered separately — Route 53 Domains
+   doesn't sell `.com.ua`), so DNS validation can complete. Re-running `apply` after
+   updating nameservers is expected if it doesn't validate on the first try. Its Route 53
+   ALIAS records target CloudFront's fixed, universal hosted zone ID (`Z2FDTNDATAQYW2`,
+   hardcoded in `main.tf`, the same for every CloudFront distribution on every AWS
+   account) rather than reading it from the frontend modules' state — that's what keeps
+   this dependency one-directional instead of circular. It does still read both frontend
+   modules' `distribution_domain_name` output, so on a from-scratch environment (not the
+   case for `dev`/`prod` today — their frontend stacks already exist) each frontend
+   module needs at least one prior apply before `dns`'s first-ever apply.
+5. `s3_cloudfront/ttrpg_club_frontend_<env>` — sets `aliases` and the real ACM
+   certificate (from step 4's output, replacing the default CloudFront cert), and, prod
+   only, a CloudFront Function 301-redirecting `www.dnaclub.com.ua` to the apex.
+6. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code both
    `lambda/ttrpg_club_api_dev` and `_prod` reference — same code, different config)
-6. `lambda/ttrpg_club_api_<env>`
-7. Re-apply `iam/github_actions_ttrpg_club` once *both* environments' steps 4 and 6 have
+7. `lambda/ttrpg_club_api_<env>` — `cors_allowed_origins` defaults to that environment's
+   real domain(s) (dev also includes `http://localhost:5173` for local frontend dev).
+8. Re-apply `iam/github_actions_ttrpg_club` once *both* environments' steps 5 and 7 have
    been applied at least once — its policy covers both stacks' exact resource ARNs via
    remote state, so it must come after them.
 
 Then, per environment, sync the frontend build and invalidate the CDN cache:
 ```
 npm run build --workspace frontend   # in ttrpg_website2, with .env pointed at that env's outputs below
-aws s3 sync frontend/dist s3://<bucket from step 4 output> --delete
-aws cloudfront create-invalidation --distribution-id <step 4 output> --paths "/*"
+aws s3 sync frontend/dist s3://<bucket from step 5 output> --delete
+aws cloudfront create-invalidation --distribution-id <step 5 output> --paths "/*"
 ```
 
 Frontend `.env` values come from that environment's own modules' outputs:
@@ -155,7 +172,7 @@ name so each deploy reads that environment's own variables (`LAMBDA_FUNCTION_NAM
 `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_AVATAR_CDN_BASE_URL`) —
 both environments need these 7 variables set (in the repo's Settings → Environments),
 pointed at each stack's own Terraform outputs. The `AWS_DEPLOY_ROLE_ARN` secret is
-shared (one broadened role, not per-environment) since step 7 above already scopes its
+shared (one broadened role, not per-environment) since step 8 above already scopes its
 policy to both stacks' exact resource ARNs.
 
 ### Poll bot stack (dev and prod)

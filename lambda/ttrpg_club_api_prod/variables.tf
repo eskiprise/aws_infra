@@ -10,10 +10,14 @@ variable "function_name" {
   description = "Name of the API Lambda function"
 }
 
-variable "cors_allowed_origin" {
-  type        = string
-  default     = "*"
-  description = "Origin allowed to call the HTTP API. Narrow this to the deployed prod frontend's CloudFront domain (and/or http://localhost:5173 for local dev) once known — this default is permissive only to unblock the first apply."
+variable "cors_allowed_origins" {
+  type = list(string)
+  default = [
+    "https://dnaclub.com.ua",
+    # Not www.dnaclub.com.ua — the CloudFront Function there redirects before any page
+    # loads, so a browser's actual fetch() origin is always the apex.
+  ]
+  description = "Origins allowed to call the HTTP API."
 }
 
 variable "reserved_concurrency" {

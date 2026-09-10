@@ -19,27 +19,6 @@ output "game_systems_table_name" {
   value = module.game_systems.dynamodb_table_id
 }
 
-output "games_table_arn" {
-  value = module.games.dynamodb_table_arn
-}
-output "games_table_name" {
-  value = module.games.dynamodb_table_id
-}
-
-output "game_participants_table_arn" {
-  value = module.game_participants.dynamodb_table_arn
-}
-output "game_participants_table_name" {
-  value = module.game_participants.dynamodb_table_id
-}
-
-output "game_poll_votes_table_arn" {
-  value = module.game_poll_votes.dynamodb_table_arn
-}
-output "game_poll_votes_table_name" {
-  value = module.game_poll_votes.dynamodb_table_id
-}
-
 output "game_comments_table_arn" {
   value = module.game_comments.dynamodb_table_arn
 }

@@ -10,6 +10,12 @@ variable "function_name" {
   description = "Name of the API Lambda function"
 }
 
+variable "admin_telegram_ids" {
+  type        = list(string)
+  default     = ["394773843"]
+  description = "Telegram user ids (as strings) granted admin access — checked per-request, not baked into a session token, so a change here takes effect on next apply without anyone needing to log in again."
+}
+
 variable "cors_allowed_origins" {
   type = list(string)
   default = [

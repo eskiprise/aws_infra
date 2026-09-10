@@ -5,13 +5,13 @@ This repository represents the infrastructure for my personal AWS cloud
 - DynamoDB Tables
   - compliments: table for the compliments for my Telegram Bot;
   - users: table where telegram users are stored;
-  - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 14 ttrpg_club tables,
+  - `dynamodb/ttrpg_club/dev/` and `dynamodb/ttrpg_club/prod/`: **all 11 ttrpg_club tables,
     one environment per folder, each folder a single Terraform state** — no more visiting
     a separate directory per table. Two fully independent, symmetric environments: table
-    names are prefixed `ttrpg_club_dev_*` / `ttrpg_club_prod_*` respectively. The 11
-    tables in each: `users`, `signup_requests`, `game_systems`, `games`,
-    `game_participants`, `game_poll_votes`, `game_comments`, `settings` (the original 8,
-    see `../ttrpg_website2` for the application code), plus `telegram_rating_polls` /
+    names are prefixed `ttrpg_club_dev_*` / `ttrpg_club_prod_*` respectively. The 5
+    tables in each: `users`, `signup_requests`, `game_systems`, `game_comments` (keyed by
+    Telegram `pollId`, not a site-native game id — see `../ttrpg_website2` for the
+    application code), `settings`, plus `telegram_rating_polls` /
     `telegram_rating_votes` (the Telegram Mini App's personal-stats feature — capture
     `/rate` poll answers straight from the club's Telegram chat, keyed purely by
     Telegram user ID; the polls table remembers each poll's creator/GM via a
@@ -73,9 +73,6 @@ This repository represents the infrastructure for my personal AWS cloud
     content is generated offline and seeded into DynamoDB, so nothing here calls an LLM
     at runtime.
 - Lambda Layers: so that one layer could be reused inside all my lambda functions;
-- Cognito: `ttrpg_club_dev` / `ttrpg_club_prod` — separate User Pools for the club
-  website (admin-provisioned members only, no public self-signup), one per environment.
-  Replaces the old unsuffixed `ttrpg_club` module (retired).
 - S3 / CloudFront: `ttrpg_club_frontend_dev` / `ttrpg_club_frontend_prod` (static site
   hosting) and `ttrpg_club_avatars_dev` / `ttrpg_club_avatars_prod` (member/GM profile
   pictures) — symmetric dev/prod pairs, replacing the old unsuffixed
@@ -108,16 +105,16 @@ To apply all of the resources you need to apply them in particular order:
 ### Website stack (dev and prod)
 
 Two fully independent, symmetric environments — nothing is shared between them (own
-DynamoDB tables, own Cognito pool, own avatars bucket, own frontend bucket/CloudFront,
-own API Lambda/API Gateway) except the one genuinely shared piece: `dns/dnaclub_com_ua`
-(one Route 53 zone + two ACM certs covering both `dnaclub.com.ua`/`www.dnaclub.com.ua`
-(prod) and `dev.dnaclub.com.ua` (dev), since it's a single registered domain). Apply
-order per environment (`<env>` = `dev` or `prod`; order matters where one module reads
-another's remote state):
-1. `dynamodb/ttrpg_club/<env>` (all 14 tables, one `terraform apply`)
-2. `cognito/ttrpg_club_<env>`
-3. `s3/ttrpg_club_avatars_<env>`
-4. `dns/dnaclub_com_ua` — **once per domain, not per environment.** Creates the Route 53
+DynamoDB tables, own avatars bucket, own frontend bucket/CloudFront, own API
+Lambda/API Gateway, own Telegram bot) except the one genuinely shared piece:
+`dns/dnaclub_com_ua` (one Route 53 zone + two ACM certs covering both
+`dnaclub.com.ua`/`www.dnaclub.com.ua` (prod) and `dev.dnaclub.com.ua` (dev), since it's
+a single registered domain). Auth is Telegram-based (Login Widget on the site, `initData`
+in the Mini App) — no Cognito, no per-environment user pool. Apply order per environment
+(`<env>` = `dev` or `prod`; order matters where one module reads another's remote state):
+1. `dynamodb/ttrpg_club/<env>` (all 11 tables, one `terraform apply`)
+2. `s3/ttrpg_club_avatars_<env>`
+3. `dns/dnaclub_com_ua` — **once per domain, not per environment.** Creates the Route 53
    zone and both certificates; requires the domain's nameservers to already be pointed
    at this zone's `name_servers` output (registered separately — Route 53 Domains
    doesn't sell `.com.ua`), so DNS validation can complete. Re-running `apply` after
@@ -129,51 +126,63 @@ another's remote state):
    modules' `distribution_domain_name` output, so on a from-scratch environment (not the
    case for `dev`/`prod` today — their frontend stacks already exist) each frontend
    module needs at least one prior apply before `dns`'s first-ever apply.
-5. `s3_cloudfront/ttrpg_club_frontend_<env>` — sets `aliases` and the real ACM
-   certificate (from step 4's output, replacing the default CloudFront cert), and, prod
+4. `s3_cloudfront/ttrpg_club_frontend_<env>` — sets `aliases` and the real ACM
+   certificate (from step 3's output, replacing the default CloudFront cert), and, prod
    only, a CloudFront Function 301-redirecting `www.dnaclub.com.ua` to the apex.
-6. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code both
+5. `npm run build --workspace backend` in `ttrpg_website2` (bundles the Lambda code both
    `lambda/ttrpg_club_api_dev` and `_prod` reference — same code, different config)
-7. `lambda/ttrpg_club_api_<env>` — `cors_allowed_origins` defaults to that environment's
+6. `lambda/ttrpg_club_api_<env>` — `cors_allowed_origins` defaults to that environment's
    real domain(s) (dev also includes `http://localhost:5173` for local frontend dev).
-8. Re-apply `iam/github_actions_ttrpg_club` once *both* environments' steps 5 and 7 have
+   `admin_telegram_ids` defaults to `[]` (see "First admin" below). Dev only:
+   `dev_login_secret` defaults to `""` (disabled) — set a real value to use
+   `npm run dev:frontend` with a working login, since the Telegram Login Widget only
+   authorizes on the domain registered with BotFather and can never work on localhost.
+7. Re-apply `iam/github_actions_ttrpg_club` once *both* environments' steps 4 and 6 have
    been applied at least once — its policy covers both stacks' exact resource ARNs via
    remote state, so it must come after them.
 
 Then, per environment, sync the frontend build and invalidate the CDN cache:
 ```
 npm run build --workspace frontend   # in ttrpg_website2, with .env pointed at that env's outputs below
-aws s3 sync frontend/dist s3://<bucket from step 5 output> --delete
-aws cloudfront create-invalidation --distribution-id <step 5 output> --paths "/*"
+aws s3 sync frontend/dist s3://<bucket from step 4 output> --delete
+aws cloudfront create-invalidation --distribution-id <step 4 output> --paths "/*"
 ```
 
 Frontend `.env` values come from that environment's own modules' outputs:
 `VITE_API_BASE_URL` ← `lambda/ttrpg_club_api_<env>` `api_base_url`;
-`VITE_COGNITO_USER_POOL_ID` / `VITE_COGNITO_CLIENT_ID` ← `cognito/ttrpg_club_<env>`;
+`VITE_TELEGRAM_BOT_USERNAME` ← the bot registered for that environment (`ttrpgpollbot`
+for prod, `ttrpgpolltestbot` for dev — see the poll bot section below; the same bot must
+also have `/setdomain` pointed at that environment's domain via BotFather, or the widget
+won't authorize);
 `VITE_AVATAR_CDN_BASE_URL` ← `https://` + `s3/ttrpg_club_avatars_<env>`
 `distribution_domain_name`.
 
-The very first admin needs to be created manually in **each** environment's own Cognito
-pool (there's no admin until one exists, and nothing is shared between dev/prod):
-`aws cognito-idp admin-create-user` + `aws cognito-idp admin-add-user-to-group --group-name admin`,
-plus a matching item in that environment's `ttrpg_club_<env>_users` table with
-`"roles": ["admin"]`.
+**First admin**: there's no bootstrap step — log in with Telegram once (creates your
+`users` row automatically), find your numeric Telegram user id (e.g. via @userinfobot),
+add it to that environment's `admin_telegram_ids` in `lambda/ttrpg_club_api_<env>`, and
+re-apply. Takes effect immediately on your next request — admin status is checked
+per-request against this list, never baked into a session token, so there's nothing to
+log out and back into.
 
 Both environments' backend Lambdas also need the real Telegram bot token in SSM (a
 Terraform-managed placeholder is created by `lambda/ttrpg_poll_bot_<env>`, value
 `"replace_me!"` until set for real — see the poll bot section below) — this is what
-verifies the Mini App's `initData` signature for `/telegram/*` routes.
+verifies both the Mini App's `initData` signature for `/telegram/*` routes and the
+website's Login Widget signature for `POST /auth/telegram` (same token, two different
+HMAC schemes — see `backend/src/lib/telegramAuth.ts`), and is also what session JWTs
+are signed with (a key derived from it, not a separate secret — see
+`backend/src/lib/session.ts`).
 
 **CI/CD branch promotion**: `ttrpg_website2`'s `deploy-backend.yml` / `deploy-frontend.yml`
 trigger on push to either `develop` (deploys to the dev stack) or `main` (deploys to the
 prod stack), selecting a GitHub Environment (`development` / `production`) by branch
 name so each deploy reads that environment's own variables (`LAMBDA_FUNCTION_NAME`,
 `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`, `VITE_API_BASE_URL`,
-`VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_AVATAR_CDN_BASE_URL`) —
-both environments need these 7 variables set (in the repo's Settings → Environments),
-pointed at each stack's own Terraform outputs. The `AWS_DEPLOY_ROLE_ARN` secret is
-shared (one broadened role, not per-environment) since step 8 above already scopes its
-policy to both stacks' exact resource ARNs.
+`VITE_TELEGRAM_BOT_USERNAME`, `VITE_AVATAR_CDN_BASE_URL`) — both environments need these
+6 variables set (in the repo's Settings → Environments), pointed at each stack's own
+Terraform outputs. The `AWS_DEPLOY_ROLE_ARN` secret is shared (one broadened role, not
+per-environment) since step 7 above already scopes its policy to both stacks' exact
+resource ARNs.
 
 ### Poll bot stack (dev and prod)
 

@@ -30,9 +30,6 @@
         "${signup_requests_table}",
         "${signup_requests_table}/index/*",
         "${game_systems_table}",
-        "${games_table}",
-        "${game_participants_table}",
-        "${game_poll_votes_table}",
         "${game_comments_table}",
         "${settings_table}",
         "${telegram_rating_votes_table}",
@@ -44,13 +41,6 @@
         "${telegram_player_level_table}",
         "${telegram_achievements_table}"
       ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "cognito-idp:AdminCreateUser"
-      ],
-      "Resource": "${user_pool_arn}"
     },
     {
       "Effect": "Allow",

@@ -10,6 +10,19 @@ variable "function_name" {
   description = "Name of the API Lambda function"
 }
 
+variable "admin_telegram_ids" {
+  type        = list(string)
+  default     = ["394773843"]
+  description = "Telegram user ids (as strings) granted admin access — checked per-request, not baked into a session token, so a change here takes effect on next apply without anyone needing to log in again."
+}
+
+variable "dev_login_secret" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Shared secret for POST /auth/dev-login, the local-dev workaround for the Telegram Login Widget only working on its registered domain. Empty means the route is disabled (process.env.DEV_LOGIN_SECRET is falsy) — set a real value here to use `npm run dev:frontend` with a working login."
+}
+
 variable "cors_allowed_origins" {
   type = list(string)
   default = [

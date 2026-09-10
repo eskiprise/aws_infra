@@ -89,74 +89,19 @@ module "game_systems" {
   }
 }
 
-module "games" {
-  source  = "terraform-aws-modules/dynamodb-table/aws"
-  version = "~> 3.1.0"
-
-  name     = "ttrpg_club_dev_games"
-  hash_key = "gameId"
-
-  attributes = [
-    { name = "gameId", type = "S" }
-  ]
-
-  tags = {
-    Terraform   = "true"
-    Project     = "ttrpg-club"
-    Environment = "development"
-  }
-}
-
-module "game_participants" {
-  source  = "terraform-aws-modules/dynamodb-table/aws"
-  version = "~> 3.1.0"
-
-  name      = "ttrpg_club_dev_game_participants"
-  hash_key  = "userId"
-  range_key = "gameId"
-
-  attributes = [
-    { name = "userId", type = "S" },
-    { name = "gameId", type = "S" }
-  ]
-
-  tags = {
-    Terraform   = "true"
-    Project     = "ttrpg-club"
-    Environment = "development"
-  }
-}
-
-module "game_poll_votes" {
-  source  = "terraform-aws-modules/dynamodb-table/aws"
-  version = "~> 3.1.0"
-
-  name      = "ttrpg_club_dev_game_poll_votes"
-  hash_key  = "gameId"
-  range_key = "userId"
-
-  attributes = [
-    { name = "gameId", type = "S" },
-    { name = "userId", type = "S" }
-  ]
-
-  tags = {
-    Terraform   = "true"
-    Project     = "ttrpg-club"
-    Environment = "development"
-  }
-}
-
+# Comments are keyed by Telegram pollId (see backend/src/handlers/resources/comments.ts)
+# — the site's own gameId-keyed games/game_participants/game_poll_votes tables that
+# used to sit here are gone; all game data now comes from the telegram_* tables below.
 module "game_comments" {
   source  = "terraform-aws-modules/dynamodb-table/aws"
   version = "~> 3.1.0"
 
   name      = "ttrpg_club_dev_game_comments"
-  hash_key  = "gameId"
+  hash_key  = "pollId"
   range_key = "commentId"
 
   attributes = [
-    { name = "gameId", type = "S" },
+    { name = "pollId", type = "S" },
     { name = "commentId", type = "S" }
   ]
 

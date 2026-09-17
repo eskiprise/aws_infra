@@ -47,6 +47,7 @@ data "template_file" "policy" {
     telegram_achievements_table = data.terraform_remote_state.dynamodb.outputs.telegram_achievements_table_arn
     # Not managed by any Terraform state (created ad hoc alongside ttrpg_poll_bot) —
     # constructed directly rather than via a remote state lookup.
-    telegram_bot_token_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/poll_bot/token"
+    telegram_bot_token_param_arn    = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/poll_bot/token"
+    telegram_club_chat_id_param_arn = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/ttrpg_club/dev/telegram_club_chat_id"
   }
 }

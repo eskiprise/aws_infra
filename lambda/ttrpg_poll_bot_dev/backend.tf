@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.3.7"
 
   required_providers {
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
     aws = {
       # Newer than the rest of the repo (~> 4.56.0) specifically because python3.13/3.14
       # runtime support requires it — matches why lambda/ttrpg_club_api also pins ~> 6.0.

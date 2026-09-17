@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.3.7"
 
   required_providers {
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
     aws = {
       # Newer than the rest of the repo (~> 4.56.0) specifically because nodejs20.x/22.x
       # runtime support requires it — the other ttrpg_club_* modules don't need this.

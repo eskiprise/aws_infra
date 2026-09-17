@@ -52,7 +52,10 @@
     {
       "Effect": "Allow",
       "Action": "ssm:GetParameter",
-      "Resource": "${telegram_bot_token_param_arn}"
+      "Resource": [
+        "${telegram_bot_token_param_arn}",
+        "${telegram_club_chat_id_param_arn}"
+      ]
     }
   ]
 }

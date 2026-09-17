@@ -12,7 +12,7 @@ variable "function_name" {
 
 variable "admin_telegram_ids" {
   type        = list(string)
-  default     = ["394773843"]
+  default     = ["394773843", "295611333"]
   description = "Telegram user ids (as strings) granted admin access — checked per-request, not baked into a session token, so a change here takes effect on next apply without anyone needing to log in again."
 }
 
@@ -42,4 +42,16 @@ variable "throttling_burst_limit" {
   type        = number
   default     = 20
   description = "Short burst of requests allowed above the steady-state rate limit before 429s kick in."
+}
+
+variable "club_chat_thread_id" {
+  type        = string
+  default     = "4"
+  description = "Forum topic in the club chat where /rate polls live — a Mini App poll is posted into the same one. Empty for a chat without topics."
+}
+
+variable "mini_app_deep_link" {
+  type        = string
+  default     = "https://t.me/ttrpgpollbot/stats"
+  description = "Same value as ttrpg_poll_bot_prod's variable of this name — used for the \"leave feedback\" button posted next to a poll created from the Mini App."
 }

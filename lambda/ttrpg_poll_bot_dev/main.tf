@@ -134,21 +134,9 @@ module "webhook" {
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
 
-  source_path = [
-    {
-      path             = "../../../ttrpg_poll_bot/build"
-      pip_requirements = false
-    }
-  ]
-  hash_extra = "webhook_dev"
-
-  # Terraform only deploys code on the very first apply (when the function doesn't exist
-  # yet). Every routine code change after that ships via CI's
-  # `aws lambda update-function-code` — without this, a later `terraform apply` for an
-  # unrelated change (env vars, IAM) would detect that AWS's real deployed hash no longer
-  # matches this stale local build/ and silently revert the function back to whatever
-  # was last built locally, undoing CI's deploy.
-  ignore_source_code_hash = true
+  # Code is never deployed from here — see the placeholder at the bottom of this file.
+  create_package         = false
+  local_existing_package = data.archive_file.placeholder.output_path
 
   environment_variables = local.dev_environment_variables
 }
@@ -168,15 +156,8 @@ module "notify_signup" {
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
 
-  source_path = [
-    {
-      path             = "../../../ttrpg_poll_bot/build"
-      pip_requirements = false
-    }
-  ]
-  hash_extra = "notify_signup_dev"
-
-  ignore_source_code_hash = true
+  create_package         = false
+  local_existing_package = data.archive_file.placeholder.output_path
 
   environment_variables = local.dev_environment_variables
 }
@@ -196,15 +177,8 @@ module "notify_feedback" {
   lambda_role                   = aws_iam_role.lambda_role.arn
   attach_cloudwatch_logs_policy = false
 
-  source_path = [
-    {
-      path             = "../../../ttrpg_poll_bot/build"
-      pip_requirements = false
-    }
-  ]
-  hash_extra = "notify_feedback_dev"
-
-  ignore_source_code_hash = true
+  create_package         = false
+  local_existing_package = data.archive_file.placeholder.output_path
 
   environment_variables = local.dev_environment_variables
 }
@@ -244,5 +218,33 @@ resource "aws_ssm_parameter" "ttrpg_dev" {
     ignore_changes = [
       value
     ]
+  }
+}
+
+# Terraform creates the functions; CI owns their code (see the README). Pinning a fixed
+# placeholder package is what makes that true: with a generated source_path, the zip is
+# named after its own contents, so a changed local build/ renamed the file, Terraform saw
+# `filename` change and pushed that stale build over whatever CI had deployed.
+# ignore_source_code_hash alone never prevented this — it only nulls source_code_hash.
+#
+# The placeholder answers instead of crashing, so a function that somehow never got a
+# real deploy logs it rather than failing with "handler not found" — and a webhook that
+# answers 200 doesn't make Telegram retry the same update forever.
+data "archive_file" "placeholder" {
+  type        = "zip"
+  output_path = "${path.module}/builds/placeholder.zip"
+
+  source {
+    filename = "lambda_handler.py"
+    content  = <<-EOT
+      """Placeholder — the real bot ships via CI. Run the Deploy workflow."""
+      import json
+
+      def _not_deployed(event, context):
+          print("Placeholder code is live: run the Deploy workflow to ship the bot")
+          return {"statusCode": 200, "body": json.dumps({"status": "not deployed yet"})}
+
+      lambda_handler = notify_new_signup = notify_new_feedback = _not_deployed
+    EOT
   }
 }

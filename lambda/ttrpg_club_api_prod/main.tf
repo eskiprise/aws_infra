@@ -24,15 +24,8 @@ module "lambda_function" {
   create_role = false
   lambda_role = aws_iam_role.lambda_role.arn
 
-  # Built by `npm run build --workspace backend` (esbuild), which bundles everything
-  # except @aws-sdk/* (already present in the Node.js runtime). Same code as dev — CI
-  # pushes it to both functions via `aws lambda update-function-code`.
-  source_path = [
-    {
-      path             = "../../../ttrpg_website2/backend/dist/api.js"
-      pip_requirements = false
-    }
-  ]
+  create_package         = false
+  local_existing_package = data.archive_file.placeholder.output_path
 
   environment_variables = {
     TABLE_USERS           = data.terraform_remote_state.dynamodb.outputs.users_table_name
@@ -51,13 +44,18 @@ module "lambda_function" {
     TABLE_TELEGRAM_ACHIEVEMENTS = data.terraform_remote_state.dynamodb.outputs.telegram_achievements_table_name
     TELEGRAM_BOT_TOKEN_PARAM    = "/ttrpg_club/prod/poll_bot/token"
 
+    # Creating a /rate-style poll from the Mini App needs the same chat, topic and
+    # feedback deep link the poll bot uses — see handlers/resources/telegramPolls.ts.
+    TELEGRAM_CLUB_CHAT_ID_PARAM  = "/ttrpg_club/prod/telegram_club_chat_id"
+    TELEGRAM_CLUB_CHAT_THREAD_ID = var.club_chat_thread_id
+    MINI_APP_DEEP_LINK           = var.mini_app_deep_link
+
     # Session JWTs are signed with a key derived from the bot token above, not a
     # separate secret — see backend/src/lib/session.ts. No DEV_LOGIN_SECRET here
     # (dev-only): its absence is what keeps POST /auth/dev-login from existing in prod.
     ADMIN_TELEGRAM_IDS = join(",", var.admin_telegram_ids)
   }
 
-  ignore_source_code_hash = true
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -76,4 +74,28 @@ resource "aws_iam_policy_attachment" "lambda_policy_attach" {
   name       = "${var.function_name}_policy_attach"
   roles      = [aws_iam_role.lambda_role.name]
   policy_arn = aws_iam_policy.lambda_policy.arn
+}
+
+# Terraform creates the function; CI owns its code (see the README). Pinning a fixed
+# placeholder package is what makes that true: with a generated source_path, the zip is
+# named after its own contents, so a changed local build renamed the file, Terraform saw
+# `filename` change and pushed that stale build over whatever CI had deployed.
+# ignore_source_code_hash alone never prevented this — it only nulls source_code_hash.
+#
+# The placeholder answers instead of crashing, so a function that somehow never got a
+# real deploy says so rather than failing with "handler not found".
+data "archive_file" "placeholder" {
+  type        = "zip"
+  output_path = "${path.module}/builds/placeholder.zip"
+
+  source {
+    filename = "api.js"
+    content  = <<-EOT
+      exports.handler = async () => ({
+        statusCode: 503,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ error: "Not deployed yet — run the Deploy Backend workflow" }),
+      });
+    EOT
+  }
 }

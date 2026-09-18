@@ -35,6 +35,7 @@ data "template_file" "policy" {
     users_table           = data.terraform_remote_state.dynamodb.outputs.users_table_arn
     signup_requests_table = data.terraform_remote_state.dynamodb.outputs.signup_requests_table_arn
     game_systems_table    = data.terraform_remote_state.dynamodb.outputs.game_systems_table_arn
+    club_media_table      = data.terraform_remote_state.dynamodb.outputs.club_media_table_arn
     game_comments_table   = data.terraform_remote_state.dynamodb.outputs.game_comments_table_arn
     settings_table        = data.terraform_remote_state.dynamodb.outputs.settings_table_arn
     avatars_bucket_arn    = data.terraform_remote_state.avatars_s3.outputs.bucket_arn

@@ -34,13 +34,13 @@ variable "reserved_concurrency" {
 
 variable "throttling_rate_limit" {
   type        = number
-  default     = 10
-  description = "Steady-state requests/second the API Gateway stage accepts across all callers combined before returning 429. A blunt, account-wide (not per-IP) limit — cheap first line of defense against a request flood driving up Lambda/DynamoDB costs."
+  default     = 25
+  description = "Steady-state requests/second the API Gateway stage accepts across all callers combined before returning 429. A blunt, account-wide (not per-IP) limit — cheap first line of defense against a request flood driving up Lambda/DynamoDB costs. Was 10 — too low for legitimate admin bursts (e.g. reordering several items in the media gallery each fires 2 PATCH + 2 CORS preflights), which tripped it in normal use, not abuse."
 }
 
 variable "throttling_burst_limit" {
   type        = number
-  default     = 20
+  default     = 50
   description = "Short burst of requests allowed above the steady-state rate limit before 429s kick in."
 }
 

@@ -19,6 +19,13 @@ output "game_systems_table_name" {
   value = module.game_systems.dynamodb_table_id
 }
 
+output "club_media_table_arn" {
+  value = module.club_media.dynamodb_table_arn
+}
+output "club_media_table_name" {
+  value = module.club_media.dynamodb_table_id
+}
+
 output "game_comments_table_arn" {
   value = module.game_comments.dynamodb_table_arn
 }

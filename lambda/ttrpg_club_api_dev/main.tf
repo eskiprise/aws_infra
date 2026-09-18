@@ -27,6 +27,7 @@ module "lambda_function" {
     TABLE_USERS           = data.terraform_remote_state.dynamodb.outputs.users_table_name
     TABLE_SIGNUP_REQUESTS = data.terraform_remote_state.dynamodb.outputs.signup_requests_table_name
     TABLE_GAME_SYSTEMS    = data.terraform_remote_state.dynamodb.outputs.game_systems_table_name
+    TABLE_CLUB_MEDIA      = data.terraform_remote_state.dynamodb.outputs.club_media_table_name
     TABLE_GAME_COMMENTS   = data.terraform_remote_state.dynamodb.outputs.game_comments_table_name
     TABLE_SETTINGS        = data.terraform_remote_state.dynamodb.outputs.settings_table_name
     AVATAR_BUCKET         = data.terraform_remote_state.avatars_s3.outputs.bucket_name

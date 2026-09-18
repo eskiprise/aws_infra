@@ -30,6 +30,7 @@
         "${signup_requests_table}",
         "${signup_requests_table}/index/*",
         "${game_systems_table}",
+        "${club_media_table}",
         "${game_comments_table}",
         "${settings_table}",
         "${telegram_rating_votes_table}",

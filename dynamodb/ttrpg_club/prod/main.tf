@@ -89,6 +89,29 @@ module "game_systems" {
   }
 }
 
+module "club_media" {
+  source  = "terraform-aws-modules/dynamodb-table/aws"
+  version = "~> 3.1.0"
+
+  # Photos/short videos for the public "About Us" gallery carousel — see
+  # ttrpg_website2/backend/src/handlers/resources/media.ts. The files themselves live in
+  # the avatars bucket (media/ prefix); this table is just the ordered list + captions.
+  name     = "ttrpg_club_prod_club_media"
+  hash_key = "mediaId"
+
+  attributes = [
+    { name = "mediaId", type = "S" }
+  ]
+
+  point_in_time_recovery_enabled = true
+
+  tags = {
+    Terraform   = "true"
+    Project     = "ttrpg-club"
+    Environment = "production"
+  }
+}
+
 # Comments are keyed by Telegram pollId (see backend/src/handlers/resources/comments.ts)
 # — the site's own gameId-keyed games/game_participants/game_poll_votes tables that
 # used to sit here are gone; all game data now comes from the telegram_* tables below.
